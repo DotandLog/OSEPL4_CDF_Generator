@@ -1,0 +1,4 @@
+h5py==3.13.0
+numpy==2.2.4
+setuptools==75.8.0
+wheel==0.45.1
