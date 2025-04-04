@@ -40,11 +40,7 @@ def compute_moments(electron_counts, bg_counts=None):
     # 應用效率校正（廣播到適當的維度）
     corrected_data = corrected_data * efficiency_factors.reshape(1, 7, 1, 1)
 
-    # 計算總和和平均值
-    total_counts = np.sum(corrected_data, axis=(0, 1))  # (16, 45)
-    mean_counts = np.mean(corrected_data, axis=(0, 1))  # (16, 45)
-
-    return total_counts.tolist(), mean_counts.tolist()
+    return corrected_data.tolist(), corrected_data.tolist()
 
 def save_as_cdf(output_file, l2_data):
     output_file = str(output_file)  # Ensure string path for pycdf
@@ -101,16 +97,14 @@ def process_hdf5_to_l2(input_path, output_path):
     with h5py.File(input_path, 'r') as f:
         for bitstring_key in f.keys():
             electron_counts = f[bitstring_key]["electron_counts"][:]
-            total = np.sum(electron_counts, axis=(1, 2))
-            mean = np.mean(electron_counts, axis=(1, 2))
 
             index = int(bitstring_key.split('_')[-1])
 
             # Placeholder for HDF5 time if needed in future
             l2_results.append({
                 "bitstring_index": index,
-                "total_counts_per_energy": total.tolist(),
-                "mean_counts_per_energy": mean.tolist(),
+                "total_counts_per_energy": electron_counts.tolist(),
+                "mean_counts_per_energy": electron_counts.tolist(),
                 "epochs": [0] * 45,
                 "durations": [0.0] * 45
             })
