@@ -103,60 +103,60 @@ class BitStringParser:
 
         # Parse Electron_Count (2 bytes per value)
         electron_counts = []
-        for e in range(self.num_energy):
-            energy_data = []
+        for i in range(self.num_incident):
+            incident_data = []
             for a in range(self.num_azimuthal):
                 azimuthal_data = []
-                for i in range(self.num_incident):
-                    incident_data = []
+                for e in range(self.num_energy):
+                    energy_data = []
                     for c in range(self.num_cycles):
                         count = self.bytes_to_value(binary_data[pos:pos+2])
-                        incident_data.append(count)
+                        energy_data.append(count)
                         pos += 2
-                    azimuthal_data.append(incident_data)
-                energy_data.append(azimuthal_data)
-            electron_counts.append(energy_data)
+                    azimuthal_data.append(energy_data)
+                incident_data.append(azimuthal_data)
+            electron_counts.append(incident_data)
 
         # Convert to a more readable format for JSON
-        for e in range(self.num_energy):
+        for i in range(self.num_incident):
             for a in range(self.num_azimuthal):
-                for i in range(self.num_incident):
+                for e in range(self.num_energy):
                     for c in range(self.num_cycles):
                         result["electron_counts"].append({
-                            "energy_idx": e,
-                            "azimuthal_idx": a,
                             "incident_idx": i,
+                            "azimuthal_idx": a,
+                            "energy_idx": e,
                             "cycle": c,
-                            "count": electron_counts[e][a][i][c]
+                            "count": electron_counts[i][a][e][c]
                         })
 
         # Parse BG_Count (2 bytes per value)
         bg_counts = []
-        for e in range(self.num_energy):
-            energy_data = []
+        for i in range(self.num_incident):
+            incident_data = []
             for a in range(self.num_azimuthal):
                 azimuthal_data = []
-                for i in range(self.num_incident):
-                    incident_data = []
+                for e in range(self.num_energy):
+                    energy_data = []
                     for c in range(self.num_cycles):
                         count = self.bytes_to_value(binary_data[pos:pos+2])
-                        incident_data.append(count)
+                        energy_data.append(count)
                         pos += 2
-                    azimuthal_data.append(incident_data)
-                energy_data.append(azimuthal_data)
-            bg_counts.append(energy_data)
+                    azimuthal_data.append(energy_data)
+                incident_data.append(azimuthal_data)
+            bg_counts.append(incident_data)
 
         # Convert to a more readable format for JSON
-        for e in range(self.num_energy):
+        for i in range(self.num_incident):
             for a in range(self.num_azimuthal):
-                for i in range(self.num_incident):
+                for e in range(self.num_energy):
                     for c in range(self.num_cycles):
                         result["bg_counts"].append({
-                            "energy_idx": e,
-                            "azimuthal_idx": a,
                             "incident_idx": i,
+                            "azimuthal_idx": a,
+                            "energy_idx": e,
                             "cycle": c,
-                            "count": bg_counts[e][a][i][c]
+                            "count": bg_counts[i][a][e][c]
                         })
 
         # Parse Measure_Energy (4 bytes per value, float)
@@ -338,7 +338,7 @@ class BitStringParser:
 
     def create_hdf5_structure(self, data, output_file):
         """
-        Save parsed data as HDF5
+        Save parsed data as HDF5 (a more efficient format for large scientific data)
 
         Args:
             data: Parsed data
@@ -434,7 +434,7 @@ class BitStringParser:
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Parse A-ESA TM scientific data hex bitstrings')
+        description='Parse L1 CDF hex bitstrings')
     parser.add_argument(
         'input_file', help='Input file containing hex bitstrings')
     parser.add_argument(

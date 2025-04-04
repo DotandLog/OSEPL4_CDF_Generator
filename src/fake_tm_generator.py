@@ -45,21 +45,21 @@ def epoch_to_bytes(epoch):
     return struct.pack('>Q', timestamp)  # 8-byte big-endian unsigned long long
 
 
-def generate_electron_counts(num_energy=16, num_azimuthal=7, num_incident=6, num_cycles=45, max_count=1000):
+def generate_electron_counts(num_energy=16, num_azimuthal=7, num_incident=6, num_cycles=45):
     """
-    Generate random electron count data
+    Generate random electron count data with values from 100 to 1000
 
     Args:
         num_energy: Number of energy steps
         num_azimuthal: Number of azimuthal angles
         num_incident: Number of incident angles
         num_cycles: Number of cycles
-        max_count: Maximum count value
 
     Returns:
-        4D array of electron counts
+        4D array of electron counts in order (incident, azimuthal, energy, cycle)
     """
-    return np.random.randint(0, max_count+1, size=(num_energy, num_azimuthal, num_incident, num_cycles))
+    # Generate with values in the range 100-1000
+    return np.random.randint(100, 1001, size=(num_incident, num_azimuthal, num_energy, num_cycles))
 
 
 def generate_measure_energy(num_energy=16, num_cycles=45):
@@ -209,7 +209,7 @@ def generate_l1_cdf_hex_bitstring():
     # Generate data
     epochs = generate_tt2000_epoch()
     electron_counts = generate_electron_counts()
-    bg_counts = generate_electron_counts()  # Same structure as electron_counts
+    bg_counts = generate_bg_counts()  # Background count data
     measure_energy = generate_measure_energy()
     output_hv = generate_output_hv()
     start_times, durations = generate_datataking_time(epochs)
@@ -223,19 +223,19 @@ def generate_l1_cdf_hex_bitstring():
         byte_array.extend(epoch_to_bytes(epoch))
 
     # Electron_Count (2 bytes per value)
-    for e in range(num_energy):
+    for i in range(num_incident):
         for a in range(num_azimuthal):
-            for i in range(num_incident):
+            for e in range(num_energy):
                 for c in range(num_cycles):
                     byte_array.extend(value_to_bytes(
-                        electron_counts[e, a, i, c], 2))
+                        electron_counts[i, a, e, c], 2))
 
     # BG_Count (2 bytes per value)
-    for e in range(num_energy):
+    for i in range(num_incident):
         for a in range(num_azimuthal):
-            for i in range(num_incident):
+            for e in range(num_energy):
                 for c in range(num_cycles):
-                    byte_array.extend(value_to_bytes(bg_counts[e, a, i, c], 2))
+                    byte_array.extend(value_to_bytes(bg_counts[i, a, e, c], 2))
 
     # Measure_Energy (4 bytes per value, float)
     for e in range(num_energy):
@@ -304,6 +304,23 @@ def save_l1_cdf_binary(filename):
 
     print(f"Generated binary data saved to {filename}")
     print(f"Total length: {len(binary_data)} bytes")
+
+
+def generate_bg_counts(num_energy=16, num_azimuthal=7, num_incident=6, num_cycles=45):
+    """
+    Generate random background count data with values from 0 to 100
+
+    Args:
+        num_energy: Number of energy steps
+        num_azimuthal: Number of azimuthal angles
+        num_incident: Number of incident angles
+        num_cycles: Number of cycles
+
+    Returns:
+        4D array of background counts in order (incident, azimuthal, energy, cycle)
+    """
+    # Generate with values in the range 0-100
+    return np.random.randint(0, 101, size=(num_incident, num_azimuthal, num_energy, num_cycles))
 
 
 def generate_multiple_bitstrings(count, output_file):
