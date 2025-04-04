@@ -5,18 +5,46 @@ from pathlib import Path
 from spacepy import pycdf
 import datetime
 
+def compute_moments(electron_counts, bg_counts=None):
+    # 定義效率校正因子
+    efficiency_factors = np.array([
+        1.010928962,  # CH1
+        1.010928962,  # CH2
+        1.027322404,  # CH3
+        1.147540984,  # CH4
+        1.005464481,  # CH5
+        1.114754098,  # CH6
+        1.043715847,  # CH7
+    ])
 
-def compute_moments(electron_counts):
-    counts_array = np.zeros((16, 7, 6, 45))
+    # 初始化觀測值和背景值陣列 (6, 7, 16, 45)
+    counts_array = np.zeros((6, 7, 16, 45))
+    bg_counts_array = np.zeros((6, 7, 16, 45))
+
+    # 填充觀測值陣列
     for entry in electron_counts:
-        e, a, i, c = entry["energy_idx"], entry["azimuthal_idx"], entry["incident_idx"], entry["cycle"]
-        counts_array[e, a, i, c] = entry["count"]
+        i, a, e, c = entry["incident_idx"], entry["azimuthal_idx"], entry["energy_idx"], entry["cycle"]
+        counts_array[i, a, e, c] = entry["count"]
 
-    total_counts = np.sum(counts_array, axis=(1, 2))
-    mean_counts = np.mean(counts_array, axis=(1, 2))
+    # 填充背景值陣列
+    if bg_counts is not None:
+        for entry in bg_counts:
+            i, a, e, c = entry["incident_idx"], entry["azimuthal_idx"], entry["energy_idx"], entry["cycle"]
+            bg_counts_array[i, a, e, c] = entry["count"]
+
+        # 扣除背景值
+        corrected_data = counts_array - bg_counts_array
+    else:
+        corrected_data = counts_array
+
+    # 應用效率校正（廣播到適當的維度）
+    corrected_data = corrected_data * efficiency_factors.reshape(1, 7, 1, 1)
+
+    # 計算總和和平均值
+    total_counts = np.sum(corrected_data, axis=(0, 1))  # (16, 45)
+    mean_counts = np.mean(corrected_data, axis=(0, 1))  # (16, 45)
 
     return total_counts.tolist(), mean_counts.tolist()
-
 
 def save_as_cdf(output_file, l2_data):
     output_file = str(output_file)  # Ensure string path for pycdf
@@ -50,7 +78,8 @@ def process_json_to_l2(input_path, output_path):
     l2_results = []
     for bitstring in data:
         electron_counts = bitstring["data"]["electron_counts"]
-        total, mean = compute_moments(electron_counts)
+        bg_counts = bitstring["data"]['bg_counts']
+        total, mean = compute_moments(electron_counts, bg_counts)
 
         # 提取 epoch (以毫秒表示) 與 duration
         epoch_list = [entry["timestamp_ms"] for entry in bitstring["data"].get("datataking_time_start", [])]
@@ -91,7 +120,7 @@ def process_hdf5_to_l2(input_path, output_path):
 
 def convert_l1_to_l2(input_file):
     input_path = Path(input_file)
-    output_file = input_path.with_name(input_path.stem + "_l2.cdf")
+    output_file = input_path.with_name(input_path.stem + "_l2_fixed.cdf")
 
     if input_file.endswith(".json"):
         process_json_to_l2(input_path, output_file)
