@@ -73,7 +73,8 @@ def plot_cdf_mult_heatmaps(folder_path, save_dir=None):
     Load a CDF file and plot total counts per energy channel over time as log-scale heatmaps.
 
     Parameters:
-    cdf_path (str): Path to the CDF file
+    folder_path (str): Path contains CDF files
+    save_dir (str): Path that saves image
     """
     
     cdf_files = [os.path.join(folder_path, f) for f in os.listdir(folder_path) if f.endswith(".cdf")]
