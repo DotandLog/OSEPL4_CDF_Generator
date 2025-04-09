@@ -40,6 +40,28 @@ The parser outputs a JSON file with the following structure:
   {
     "bitstring_index": 1,
     "data": {
+      "global_attributes": {
+        "Project": "A-ESA science payload",
+        "Discipline": "lunar surface plasma environment",
+        "Data_type": "L1 > Level 1 calibrated count data",
+        "Descriptor": "A-ESA",
+        "File_naming_convention": "source_datatype_descriptor",
+        "Data_version": "V01",
+        "PI_name": "Lin, Hsin-Fa / Chang, Tzu-Fang",
+        "PI_affiliation": "TASA / NCKU",
+        "TEXT": "All-Sky Electrostatic Analyze (10eV ~ 10KeV)",
+        "Instrument_type": "Particles (space)",
+        "Logical_source": "Aesa_L1",
+        "Logical_file_id": "Aesa_L1_20250409_v01",
+        "Logical_source_description": "Level 1 data for 10eV ~ 10KeV electron distribution on the lunar surface",
+        "Time_resolution": "Cycle period ~ 80 s",
+        "Rules_of_use": "TBD",
+        "Generated_by": "TASA / NCKU",
+        "Generation_date": "2025-04-09",
+        "Acknowledgement": "TBD",
+        "LINK_TEXT": "TBD",
+        "LINK_TITLE": "TBD"
+      },
       "epochs": [
         {
           "cycle": 0,
@@ -144,6 +166,9 @@ The parser outputs a JSON file with the following structure:
 
 - **bitstring_index**: Index of the bitstring (starting from 1)
 - **data**: Contains all the structured data for this bitstring
+  - global_attributes: L1 CDF global attributes
+    - Contains all the metadata for the CDF file as specified in the OSEPL4 specification
+    - Includes project details, data descriptions, PI information, etc.
   - **epochs**: Time labels for each cycle (45 cycles, ~80s each)
     - **cycle**: Cycle index (0-44)
     - **timestamp_ms**: Unix timestamp in milliseconds
@@ -190,7 +215,13 @@ The parser outputs a JSON file with the following structure:
 If you choose HDF5 as the output format, the data will be saved in a more efficient hierarchical structure:
 
 ```
+/
+  /global_attributes/  # CDF global attributes stored as HDF5 attributes
 /bitstring_1/
+  @Project  # Global attributes stored as HDF5 attributes
+  @Discipline
+  @Data_type
+  # ... other global attributes
   /epochs/
     /timestamp_ms
     /iso_format

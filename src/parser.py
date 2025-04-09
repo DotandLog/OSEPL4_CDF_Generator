@@ -76,8 +76,30 @@ class BitStringParser:
         # Convert hex string to bytes
         binary_data = bytes.fromhex(hex_string)
 
-        # Initialize result dictionary
+        # Initialize result dictionary with global attributes
         result = {
+            "global_attributes": {
+                "Project": "A-ESA science payload",
+                "Discipline": "lunar surface plasma environment",
+                "Data_type": "L1 > Level 1 calibrated count data",
+                "Descriptor": "A-ESA",
+                "File_naming_convention": "source_datatype_descriptor",
+                "Data_version": "V01",
+                "PI_name": "Lin, Hsin-Fa / Chang, Tzu-Fang",
+                "PI_affiliation": "TASA / NCKU",
+                "TEXT": "All-Sky Electrostatic Analyze (10eV ~ 10KeV)",
+                "Instrument_type": "Particles (space)",
+                "Logical_source": "Aesa_L1",
+                "Logical_file_id": f"Aesa_L1_{datetime.datetime.now().strftime('%Y%m%d')}_v01",
+                "Logical_source_description": "Level 1 data for 10eV ~ 10KeV electron distribution on the lunar surface",
+                "Time_resolution": "Cycle period ~ 80 s",
+                "Rules_of_use": "TBD",
+                "Generated_by": "TASA / NCKU",
+                "Generation_date": datetime.datetime.now().strftime("%Y-%m-%d"),
+                "Acknowledgement": "TBD",
+                "LINK_TEXT": "TBD",
+                "LINK_TITLE": "TBD"
+            },
             "epochs": [],
             "electron_counts": [],
             "bg_counts": [],
@@ -352,11 +374,25 @@ class BitStringParser:
             return
 
         with h5py.File(output_file, 'w') as f:
+            # Add global attributes to the root group
+            global_attrs = f.create_group("global_attributes")
+            for bitstring_data in data:
+                if "global_attributes" in bitstring_data["data"]:
+                    # Use the global attributes from the first bitstring
+                    for key, value in bitstring_data["data"]["global_attributes"].items():
+                        global_attrs.attrs[key] = value
+                    break
+
             # For each bitstring
             for bitstring_data in data:
                 bitstring_index = bitstring_data["bitstring_index"]
                 bitstring_group = f.create_group(
                     f"bitstring_{bitstring_index}")
+
+                # Also add global attributes to each bitstring group
+                if "global_attributes" in bitstring_data["data"]:
+                    for key, value in bitstring_data["data"]["global_attributes"].items():
+                        bitstring_group.attrs[key] = value
 
                 # Process EPOCH data
                 epochs_group = bitstring_group.create_group("epochs")
@@ -434,7 +470,7 @@ class BitStringParser:
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Parse L1 CDF hex bitstrings')
+        description='Parse OSEPL4 L1 CDF hex bitstrings')
     parser.add_argument(
         'input_file', help='Input file containing hex bitstrings')
     parser.add_argument(
