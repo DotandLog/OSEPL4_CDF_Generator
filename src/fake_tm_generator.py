@@ -2,6 +2,8 @@ import numpy as np
 import struct
 import datetime
 import random
+import os
+from pathlib import Path
 from datetime import timedelta
 
 
@@ -282,10 +284,16 @@ def save_l1_cdf_hex_bitstring(filename):
     """
     hex_string = generate_l1_cdf_hex_bitstring()
 
-    with open(filename, 'w') as f:
+    # Use Path for cross-platform compatibility
+    output_path = Path(filename)
+
+    # Create parent directories if they don't exist
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    with open(output_path, 'w') as f:
         f.write(hex_string)
 
-    print(f"Generated hex bitstring saved to {filename}")
+    print(f"Generated hex bitstring saved to {output_path}")
     print(f"Total length: {len(hex_string) // 2} bytes")
 
 
@@ -299,10 +307,16 @@ def save_l1_cdf_binary(filename):
     hex_string = generate_l1_cdf_hex_bitstring()
     binary_data = bytes.fromhex(hex_string)
 
-    with open(filename, 'wb') as f:
+    # Use Path for cross-platform compatibility
+    output_path = Path(filename)
+
+    # Create parent directories if they don't exist
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    with open(output_path, 'wb') as f:
         f.write(binary_data)
 
-    print(f"Generated binary data saved to {filename}")
+    print(f"Generated binary data saved to {output_path}")
     print(f"Total length: {len(binary_data)} bytes")
 
 
@@ -331,7 +345,13 @@ def generate_multiple_bitstrings(count, output_file):
         count: Number of bitstrings to generate
         output_file: Output filename
     """
-    with open(output_file, 'w') as f:
+    # Use Path for cross-platform compatibility
+    output_path = Path(output_file)
+
+    # Create parent directories if they don't exist
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    with open(output_path, 'w') as f:
         for i in range(count):
             print(f"Generating bitstring {i+1}/{count}...")
             hex_string = generate_l1_cdf_hex_bitstring()
@@ -339,15 +359,15 @@ def generate_multiple_bitstrings(count, output_file):
             f.write(hex_string)
             f.write("\n\n")
 
-    print(f"Generated {count} hex bitstrings saved to {output_file}")
+    print(f"Generated {count} hex bitstrings saved to {output_path}")
 
 
 def main():
     # Generate 10 bitstrings and save to text file
-    generate_multiple_bitstrings(10, "input/l1_cdf_data.txt")
+    generate_multiple_bitstrings(10, "input/l1_cdf_data_10samples.txt")
 
-    # Save a single sample as binary
-    # save_l1_cdf_binary("l1_cdf_data_sample.bin")
+    # Optional: Save a single sample as binary
+    # save_l1_cdf_binary("input/l1_cdf_data_sample.bin")
 
     # Sample analysis of the data structure
     print("\nData Structure Analysis:")

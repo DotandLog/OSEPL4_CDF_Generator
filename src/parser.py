@@ -3,6 +3,7 @@ import json
 import datetime
 import numpy as np
 import argparse
+import os
 from pathlib import Path
 
 
@@ -298,7 +299,13 @@ class BitStringParser:
         current_bitstring = ""
         current_index = None
 
-        with open(input_file, 'r') as f:
+        # Use Path for cross-platform compatibility
+        input_path = Path(input_file)
+
+        if not input_path.exists():
+            raise FileNotFoundError(f"Input file not found: {input_path}")
+
+        with open(input_path, 'r', encoding='utf-8') as f:
             for line in f:
                 line = line.strip()
                 if line.startswith("Bitstring"):
@@ -353,10 +360,16 @@ class BitStringParser:
                     return obj.tolist()
                 return super(NumpyEncoder, self).default(obj)
 
-        with open(output_file, 'w') as f:
+        # Use Path for cross-platform compatibility
+        output_path = Path(output_file)
+
+        # Create parent directories if they don't exist
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+
+        with open(output_path, 'w', encoding='utf-8') as f:
             json.dump(data, f, cls=NumpyEncoder, indent=2)
 
-        print(f"Parsed data saved to {output_file}")
+        print(f"Parsed data saved to {output_path}")
 
     def create_hdf5_structure(self, data, output_file):
         """
@@ -373,7 +386,13 @@ class BitStringParser:
                 "h5py not installed. Please install with 'pip install h5py' to use HDF5 format.")
             return
 
-        with h5py.File(output_file, 'w') as f:
+        # Use Path for cross-platform compatibility
+        output_path = Path(output_file)
+
+        # Create parent directories if they don't exist
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+
+        with h5py.File(output_path, 'w') as f:
             # Add global attributes to the root group
             global_attrs = f.create_group("global_attributes")
             for bitstring_data in data:
