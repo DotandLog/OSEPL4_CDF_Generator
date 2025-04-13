@@ -86,7 +86,7 @@ class BitStringParser:
                 "Descriptor": "A-ESA",
                 "File_naming_convention": "source_datatype_descriptor",
                 "Data_version": "V01",
-                "PI_name": "Lin, Hsin-Fa / Chang, Tzu-Fang",
+                "PI_name": "Lin, Shin-Fa / Chang, Tzu-Fang",
                 "PI_affiliation": "TASA / NCKU",
                 "TEXT": "All-Sky Electrostatic Analyze (10eV ~ 10KeV)",
                 "Instrument_type": "Particles (space)",
