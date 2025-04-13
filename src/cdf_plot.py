@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 from spacepy import pycdf  
 import datetime
+import argparse
 
 def plot_cdf_heatmap(cdf_path):
     """
@@ -140,12 +141,26 @@ def plot_cdf_mult_heatmaps(folder_path, save_dir=None):
                 plt.tight_layout(rect=[0, 0, 0.9, 1])
                 plt.suptitle(f"{os.path.basename(cdf_path)} | Sample {data_idx + 1} - Plot {fig_idx + 1}", fontsize=16, y=1.02)
                 
-                if save_dir:
-                    save_path = os.path.join(save_dir, f"{os.path.basename(cdf_path)}_sample{data_idx+1}_fig{fig_idx+1}.png")
-                    plt.savefig(save_path, bbox_inches='tight')
-                    print(f"Saved: {save_path}")
                 
+                os.makedirs(save_dir, exist_ok=True)
+                save_path = os.path.join(save_dir, f"{os.path.basename(cdf_path)}_sample{data_idx+1}_fig{fig_idx+1}.png")
+                plt.savefig(save_path, bbox_inches='tight')
+                print(f"Saved: {save_path}")
+                    
                 plt.show()
             
 # test
 # plot_cdf_mult_heatmaps("../input", save_dir='../output_img')
+def main():
+    parser = argparse.ArgumentParser(description="Plot CDF heatmaps from a CDF file.")
+    parser.add_argument("--cdf_path", type=str, help="Path to the CDF file.")
+    parser.add_argument("--save_dir", type=str, default=None, help="Directory to save the plots.")
+    
+    args = parser.parse_args()
+
+    plot_cdf_mult_heatmaps(args.cdf_path, save_dir=args.save_dir)
+
+
+
+if __name__ == "__main__":
+    main()
