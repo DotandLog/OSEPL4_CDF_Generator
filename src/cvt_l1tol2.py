@@ -54,22 +54,21 @@ def save_as_cdf(output_file, l2_data):
         means = [d["mean_counts_per_energy"] for d in l2_data]
         epochs = [d["epochs"] for d in l2_data]
         durations = [d["durations"] for d in l2_data]
-        # 將複雜資料轉換為 JSON 字串
-        global_attributes = [json.dumps(d.get("global_attributes", {})) for d in l2_data]
-        measure_energy = [json.dumps(d.get("measure_energy", [])) for d in l2_data]
-        output_hv = [json.dumps(d.get("output_hv", [])) for d in l2_data]
-        data_quality = [json.dumps(d.get("data_quality", [])) for d in l2_data]
+        
+        # 將全域屬性直接寫入 CDF 的 gAttributes
+        for d in l2_data:
+            for key, value in d.get("global_attributes", {}).items():
+                cdf.attrs[key] = value
 
         # 儲存各個欄位到 CDF
-        cdf["global_attributes"] = global_attributes
         cdf["bitstring_index"] = indices
         cdf["total_counts_per_energy"] = totals
         cdf["mean_counts_per_energy"] = means
         cdf["epoch"] = epochs
         cdf["duration"] = durations
-        cdf["measure_energy"] = measure_energy
-        cdf["output_hv"] = output_hv
-        cdf["data_quality"] = data_quality
+        cdf["measure_energy"] = [json.dumps(d.get("measure_energy", [])) for d in l2_data]
+        cdf["output_hv"] = [json.dumps(d.get("output_hv", [])) for d in l2_data]
+        cdf["data_quality"] = [json.dumps(d.get("data_quality", [])) for d in l2_data]
 
         # 添加屬性說明
         cdf["epoch"].attrs["UNITS"] = "ms since 1970-01-01"
@@ -83,8 +82,11 @@ def save_single_bitstring_cdf(output_file, l2_data):
     output_file = str(output_file)
 
     with pycdf.CDF(output_file, '') as cdf:
+        # 將全域屬性直接寫入 CDF 的 gAttributes
+        for key, value in l2_data.get("global_attributes", {}).items():
+            cdf.attrs[key] = value
+
         # 儲存單一 bitstring 的資料，將標量資料轉換為列表
-        cdf["global_attributes"] = [json.dumps(l2_data["global_attributes"])]
         cdf["bitstring_index"] = [l2_data["bitstring_index"]]
         cdf["total_counts_per_energy"] = [l2_data["total_counts_per_energy"]]
         cdf["mean_counts_per_energy"] = [l2_data["mean_counts_per_energy"]]

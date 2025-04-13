@@ -18,18 +18,54 @@ This tool parses hex bitstrings generated for the OSEPL4 project and converts th
 
 ### Usage
 
-#### Parsing Bitstrings
+#### 基本用法
 
 ```bash
-# Parse bitstrings and output as JSON (default)
+# 解析 bitstrings 並輸出為 JSON（預設格式）
 python src/parser.py input/l1_cdf_data.txt
 
-# Parse bitstrings and output as HDF5
-python src/parser.py l1_cdf_data.txt --output-format hdf5
+# 解析 bitstrings 並輸出為 HDF5 格式
+python src/parser.py input/l1_cdf_data.txt --output-format hdf5
 
-# Specify custom output file
-python parser.py l1_cdf_data.txt --output-file my_parsed_data.json
+# 指定自訂輸出檔案名稱
+python src/parser.py input/l1_cdf_data.txt --output-file my_parsed_data.json
 ```
+
+#### 參數說明
+
+- `input_file`: 輸入檔案路徑（必要參數）
+  - 包含 hex bitstrings 的文字檔案
+- `--output-format`: 輸出格式（選填）
+  - 可選值：`json`（預設）或 `hdf5`
+- `--output-file`: 輸出檔案名稱（選填）
+  - 若未指定，將使用輸入檔案名稱並更改副檔名
+
+#### 輸入檔案格式
+
+輸入檔案應為純文字檔案，包含多個 bitstring 區塊，格式如下：
+
+```
+Bitstring 1:
+0123456789ABCDEF...
+
+Bitstring 2:
+FEDCBA9876543210...
+```
+
+每個 bitstring 區塊應以 "Bitstring X:" 開頭，後面跟著十六進制字串。
+
+#### 輸出檔案格式
+
+1. **JSON 格式**：
+   - 預設輸出格式
+   - 適合人類閱讀和除錯
+   - 檔案較大，讀寫速度較慢
+
+2. **HDF5 格式**：
+   - 二進制格式，檔案較小
+   - 讀寫速度快
+   - 適合處理大量數據
+   - 需要安裝 `h5py` 套件
 
 ### Output JSON Structure
 
@@ -274,6 +310,13 @@ This Python script processes Level-1 scientific telemetry data (in `.json` or `.
 
 ---
 
+### Usage
+
+```
+python cvt_l1tol2.py  --input_file "../input/l1_cdf_data.json" --output_dir "../output"
+python cvt_l1tol2.py  --input_file "../input/l1_cdf_data.json" --output_dir "../output" --separate_files
+```
+
 ### Input File Formats
 
 The script supports:
@@ -299,8 +342,8 @@ The JSON input must include at least:
 
 Each `.cdf` output contains the following variables:
 
-| Variable Name             | Shape         | Description                                               |
-| ------------------------- | ------------- | --------------------------------------------------------- |
+| Variable Name               | Shape           | Description                                               |
+| --------------------------- | --------------- | --------------------------------------------------------- |
 | `bitstring_index`         | `(N,)`        | Index of each bitstring block                             |
 | `total_counts_per_energy` | `(N, 16, 45)` | Total electron counts per energy channel and cycle        |
 | `mean_counts_per_energy`  | `(N, 16, 45)` | Mean electron counts per energy channel and cycle         |
@@ -310,9 +353,6 @@ Each `.cdf` output contains the following variables:
 Each variable includes descriptive attributes (`UNITS`, `DESCRIPTION`) for compatibility with SPEDAS, NASA CDF Viewer, or other tools.
 
 ---
-
-
-
 
 ### 🛠️ Customization
 
