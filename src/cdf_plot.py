@@ -147,7 +147,7 @@ def plot_cdf_mult_heatmaps(folder_path, save_dir=None):
                 plt.savefig(save_path, bbox_inches='tight')
                 print(f"Saved: {save_path}")
                     
-                plt.show()
+                # plt.show()
             
 # test
 # plot_cdf_mult_heatmaps("../input", save_dir='../output_img')
@@ -156,6 +156,7 @@ def main():
     parser.add_argument("--cdf_path", type=str, help="Path to the CDF file.")
     parser.add_argument("--save_dir", type=str, default=None, help="Directory to save the plots.")
     
+
     args = parser.parse_args()
 
     plot_cdf_mult_heatmaps(args.cdf_path, save_dir=args.save_dir)
