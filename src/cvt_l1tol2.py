@@ -19,18 +19,18 @@ def compute_moments(electron_counts, bg_counts=None):
     ])
 
     # 初始化觀測值和背景值陣列 (6, 7, 16, 45)
-    counts_array = np.zeros((6, 7, 16, 45))
-    bg_counts_array = np.zeros((6, 7, 16, 45))
+    counts_array = np.zeros((16, 7, 6, 45))
+    bg_counts_array = np.zeros((16, 7, 6, 45))
 
     # 填充觀測值陣列
     for entry in electron_counts:
-        i, a, e, c = entry["incident_idx"], entry["azimuthal_idx"], entry["energy_idx"], entry["cycle"]
+        i, a, e, c = entry["energy_idx"], entry["azimuthal_idx"], entry["incident_idx"], entry["cycle"]
         counts_array[i, a, e, c] = entry["count"]
 
     # 填充背景值陣列（若提供的話）
     if bg_counts is not None:
         for entry in bg_counts:
-            i, a, e, c = entry["incident_idx"], entry["azimuthal_idx"], entry["energy_idx"], entry["cycle"]
+            i, a, e, c = entry["energy_idx"], entry["azimuthal_idx"], entry["incident_idx"], entry["cycle"]
             bg_counts_array[i, a, e, c] = entry["count"]
 
         # 扣除背景值
@@ -42,7 +42,7 @@ def compute_moments(electron_counts, bg_counts=None):
     corrected_data = corrected_data * efficiency_factors.reshape(1, 7, 1, 1)
 
     # 此處同時計算總計數與均值（此實作中二者一致，可根據需求分開）
-    return corrected_data.tolist(), corrected_data.tolist()
+    return corrected_data.tolist(), corrected_data.tolist(), bg_counts_array.tolist()
 
 def save_as_cdf(output_file, l2_data):
     output_file = str(output_file)  # 確保路徑為字串
@@ -52,29 +52,34 @@ def save_as_cdf(output_file, l2_data):
         indices = [d["bitstring_index"] for d in l2_data]
         totals = [d["total_counts_per_energy"] for d in l2_data]
         means = [d["mean_counts_per_energy"] for d in l2_data]
+        electron_counts = [d["electron_counts"] for d in l2_data]
+        bg_counts = [d["bg_counts"] for d in l2_data]
         epochs = [d["epochs"] for d in l2_data]
-        durations = [d["durations"] for d in l2_data]
+        datataking_time_start = [d["datataking_time_start"] for d in l2_data]
+        data_time_duration = [d["data_time_duration"] for d in l2_data]
         
         # 將全域屬性直接寫入 CDF 的 gAttributes
         for d in l2_data:
             for key, value in d.get("global_attributes", {}).items():
                 cdf.attrs[key] = value
 
-        # 儲存各個欄位到 CDF
+        # 儲存各個欄位到 CDF (根據圖片修正欄位名稱)
         cdf["bitstring_index"] = indices
-        cdf["total_counts_per_energy"] = totals
-        cdf["mean_counts_per_energy"] = means
-        cdf["epoch"] = epochs
-        cdf["duration"] = durations
-        cdf["measure_energy"] = [json.dumps(d.get("measure_energy", [])) for d in l2_data]
-        cdf["output_hv"] = [json.dumps(d.get("output_hv", [])) for d in l2_data]
-        cdf["data_quality"] = [json.dumps(d.get("data_quality", [])) for d in l2_data]
+        cdf["EPOCH"] = epochs  # 修正欄位名稱
+        cdf["Electron_Flux_3D"] = totals  # 修正欄位名稱
+        cdf["BG_Flux"] = bg_counts  # 修正欄位名稱
+        # cdf["mean_counts_per_energy"] = means  # 保留原有欄位，可能用於其他計算
+        cdf["Measure_Energy"] = [json.dumps(d.get("measure_energy", [])) for d in l2_data]  # 修正欄位名稱
+        cdf["Output_HV"] = [json.dumps(d.get("output_hv", [])) for d in l2_data]  # 修正欄位名稱
+        cdf["Datataking_Time_Start"] = datataking_time_start  # 修正欄位名稱
+        cdf["Data_Time_Duration"] = data_time_duration  # 修正欄位名稱
+        cdf["Data_Quality"] = [json.dumps(d.get("data_quality", [])) for d in l2_data]  # 修正欄位名稱
 
         # 添加屬性說明
-        cdf["epoch"].attrs["UNITS"] = "ms since 1970-01-01"
-        cdf["epoch"].attrs["DESCRIPTION"] = "Start time of each data cycle in milliseconds"
-        cdf["duration"].attrs["UNITS"] = "seconds"
-        cdf["duration"].attrs["DESCRIPTION"] = "Duration of each data cycle"
+        cdf["EPOCH"].attrs["UNITS"] = "ms since 1970-01-01"
+        cdf["EPOCH"].attrs["DESCRIPTION"] = "Start time of each data cycle in milliseconds"
+        cdf["Data_Time_Duration"].attrs["UNITS"] = "seconds"
+        cdf["Data_Time_Duration"].attrs["DESCRIPTION"] = "Duration of each data cycle"
         
     print(f"Level-2 CDF saved to {output_file}")
 
@@ -86,21 +91,50 @@ def save_single_bitstring_cdf(output_file, l2_data):
         for key, value in l2_data.get("global_attributes", {}).items():
             cdf.attrs[key] = value
 
-        # 儲存單一 bitstring 的資料，將標量資料轉換為列表
+        # 儲存單一 bitstring 的資料，將標量資料轉換為列表 (根據圖片修正欄位名稱)
+        # cdf["bitstring_index"] = [l2_data["bitstring_index"]]
+        # cdf["Electron_Count"] = [l2_data["total_counts_per_energy"]]  # 修正欄位名稱
+        # cdf["mean_counts_per_energy"] = [l2_data["mean_counts_per_energy"]]  # 保留原有欄位
+        # cdf["EPOCH"] = l2_data["epochs"]  # 修正欄位名稱
+        # cdf["Data_Time_Duration"] = l2_data["durations"]  # 修正欄位名稱
+        # cdf["Measure_Energy"] = [json.dumps(l2_data["measure_energy"])]  # 修正欄位名稱
+        # cdf["Output_HV"] = [json.dumps(l2_data["output_hv"])]  # 修正欄位名稱
+        # cdf["Data_Quality"] = [json.dumps(l2_data["data_quality"])]  # 修正欄位名稱
+        # 缺少 BG_Count 欄位，但資料中可能沒有提供
+        # 缺少 Datataking_Time_Start 欄位，但已使用 EPOCH 代替
+        # print(l2_data["bg_counts"])
+        
+        measure_energy_array = np.zeros((16, 45))
+        for entry in l2_data["measure_energy"]:
+            i, a = entry["energy_idx"], entry["cycle"]
+            measure_energy_array[i, a] = entry["energy_value"]
+            
+        output_hv_array = np.zeros((3, 16, 6, 45))
+        for entry in l2_data["output_hv"]:
+            i, a, e, c = entry["electrode_idx"], entry["energy_idx"], entry["incident_idx"], entry["cycle"]
+            output_hv_array[i, a, e, c] = entry["voltage"]
+        
+        # data_quality_array = np.zeros((16, 7, 6, 45))
+        
+         # 儲存各個欄位到 CDF (根據圖片修正欄位名稱)
         cdf["bitstring_index"] = [l2_data["bitstring_index"]]
-        cdf["total_counts_per_energy"] = [l2_data["total_counts_per_energy"]]
-        cdf["mean_counts_per_energy"] = [l2_data["mean_counts_per_energy"]]
-        cdf["epoch"] = l2_data["epochs"]
-        cdf["duration"] = l2_data["durations"]
-        cdf["measure_energy"] = [json.dumps(l2_data["measure_energy"])]
-        cdf["output_hv"] = [json.dumps(l2_data["output_hv"])]
-        cdf["data_quality"] = [json.dumps(l2_data["data_quality"])]
+        cdf["EPOCH"] = l2_data["epochs"]  # 修正欄位名稱
+        cdf["Electron_Flux_3D"] = l2_data["total_counts_per_energy"]  # 修正欄位名稱
+        cdf["BG_Flux"] = l2_data["bg_counts"]  # 修正欄位名稱
+        # cdf["mean_counts_per_energy"] = means  # 保留原有欄位，可能用於其他計算
+        # cdf["Measure_Energy"] = [json.dumps(l2_data["measure_energy"])]  # 修正欄位名稱
+        cdf["Measure_Energy"] = measure_energy_array.tolist()  # 修正欄位名稱
+        cdf["Output_HV"] = output_hv_array.tolist()  # 修正欄位名稱
+        cdf["Datataking_Time_Start"] = l2_data["datataking_time_start"]  # 修正欄位名稱
+        cdf["Data_Time_Duration"] = l2_data["data_time_duration"]  # 修正欄位名稱
+        cdf["Data_Quality"] = [json.dumps(l2_data.get("data_quality", []))]  # 修正欄位名稱，修正為單一物件
+        
 
         # 添加屬性說明
-        cdf["epoch"].attrs["UNITS"] = "ms since 1970-01-01"
-        cdf["epoch"].attrs["DESCRIPTION"] = "Start time of each data cycle in milliseconds"
-        cdf["duration"].attrs["UNITS"] = "seconds"
-        cdf["duration"].attrs["DESCRIPTION"] = "Duration of each data cycle"
+        cdf["EPOCH"].attrs["UNITS"] = "ms since 1970-01-01"
+        cdf["EPOCH"].attrs["DESCRIPTION"] = "Start time of each data cycle in milliseconds"
+        cdf["Data_Time_Duration"].attrs["UNITS"] = "seconds"
+        cdf["Data_Time_Duration"].attrs["DESCRIPTION"] = "Duration of each data cycle"
 
     print(f"Single bitstring CDF saved to {output_file}")
 
@@ -121,20 +155,25 @@ def process_json_to_l2(input_path, output_path, separate_files=False):
         bg_counts = bitstring["data"].get("bg_counts", None)
 
         # 計算校正後的數據（總計數與均值，這裡回傳兩個相同的結果）
-        total, mean = compute_moments(electron_counts, bg_counts)
+        total, mean, bg_counts_array = compute_moments(electron_counts, bg_counts)
 
-        # 從 datataking_time_start 提取 timestamp_ms 當作 epoch
-        epoch_list = [entry["timestamp_ms"] for entry in bitstring["data"].get("datataking_time_start", [])]
+        # 從 epochs 提取 timestamp_ms 當作 epoch
+        epoch_list = [entry["timestamp_ms"] for entry in bitstring["data"].get("epochs", [])]
         # 從 data_time_duration 提取 duration_seconds 當作持續時間
-        duration_list = [entry["duration_seconds"] for entry in bitstring["data"].get("data_time_duration", [])]
+        datataking_time_start_list = [entry["iso_format"] for entry in bitstring["data"].get("datataking_time_start", [])]
+        data_time_duration_list = [entry["duration_seconds"] for entry in bitstring["data"].get("data_time_duration", [])]
+        
 
         l2_result = {
             "global_attributes": global_attrs,
             "bitstring_index": bitstring["bitstring_index"],
             "total_counts_per_energy": total,
             "mean_counts_per_energy": mean,
+            "electron_counts": electron_counts,
+            "bg_counts": bg_counts_array,
             "epochs": epoch_list,
-            "durations": duration_list,
+            "datataking_time_start": datataking_time_start_list,
+            "data_time_duration": data_time_duration_list,
             # 儲存其他 metadata
             "measure_energy": measure_energy,
             "output_hv": output_hv,
