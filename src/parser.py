@@ -9,7 +9,7 @@ from pathlib import Path
 
 class BitStringParser:
     def __init__(self):
-        # Define data structure dimensions
+        # Define data structure dimensions according to the image specification
         self.num_energy = 16
         self.num_azimuthal = 7
         self.num_incident = 6
@@ -77,12 +77,12 @@ class BitStringParser:
         # Convert hex string to bytes
         binary_data = bytes.fromhex(hex_string)
 
-        # Initialize result dictionary with global attributes
+        # Initialize result dictionary with global attributes from the image
         result = {
             "global_attributes": {
                 "Project": "A-ESA science payload",
                 "Discipline": "lunar surface plasma environment",
-                "Data_type": "L1 > Level 1 calibrated count data",
+                "Data_type": "L1 > Level 1 uncalibrated count data",  # Updated as per image
                 "Descriptor": "A-ESA",
                 "File_naming_convention": "source_datatype_descriptor",
                 "Data_version": "V01",
@@ -90,9 +90,9 @@ class BitStringParser:
                 "PI_affiliation": "TASA / NCKU",
                 "TEXT": "All-Sky Electrostatic Analyze (10eV ~ 10KeV)",
                 "Instrument_type": "Particles (space)",
-                "Logical_source": "Aesa_L1",
-                "Logical_file_id": f"Aesa_L1_{datetime.datetime.now().strftime('%Y%m%d')}_v01",
-                "Logical_source_description": "Level 1 data for 10eV ~ 10KeV electron distribution on the lunar surface",
+                "Logical_source": "AESA_L1",  # Updated as per image
+                "Logical_file_id": f"AESA_L1_{datetime.datetime.now().strftime('%Y%m%d')}_v01",
+                "Logical_source_description": "Level 1 uncalibrated count data for 10eV ~ 10KeV electron distribution on the lunar surface",
                 "Time_resolution": "Cycle period ~ 80 s",
                 "Rules_of_use": "TBD",
                 "Generated_by": "TASA / NCKU",
@@ -371,151 +371,182 @@ class BitStringParser:
 
         print(f"Parsed data saved to {output_path}")
 
-    def create_hdf5_structure(self, data, output_file):
+    def generate_cdf_directly(self, data, output_dir):
         """
-        Save parsed data as HDF5 (a more efficient format for large scientific data)
+        Generate CDF files directly from bitstring data according to the image specification
 
         Args:
             data: Parsed data
-            output_file: Output filename
+            output_dir: Output directory for CDF files
         """
         try:
-            import h5py
+            import spacepy.pycdf as cdf
         except ImportError:
             print(
-                "h5py not installed. Please install with 'pip install h5py' to use HDF5 format.")
+                "Error: spacepy.pycdf not installed. Please install with 'pip install spacepy'")
+            print("Note: SpacePy requires CDF library. See installation guide at: https://spacepy.github.io/install.html")
             return
 
-        # Use Path for cross-platform compatibility
-        output_path = Path(output_file)
+        # Create output directory if it doesn't exist
+        output_path = Path(output_dir)
+        output_path.mkdir(parents=True, exist_ok=True)
 
-        # Create parent directories if they don't exist
-        output_path.parent.mkdir(parents=True, exist_ok=True)
+        # Process each bitstring
+        for bitstring_data in data:
+            bitstring_index = bitstring_data["bitstring_index"]
+            data_values = bitstring_data["data"]
 
-        with h5py.File(output_path, 'w') as f:
-            # Add global attributes to the root group
-            global_attrs = f.create_group("global_attributes")
-            for bitstring_data in data:
-                if "global_attributes" in bitstring_data["data"]:
-                    # Use the global attributes from the first bitstring
-                    for key, value in bitstring_data["data"]["global_attributes"].items():
-                        global_attrs.attrs[key] = value
-                    break
+            # Get the date from the first epoch for filename
+            first_epoch_iso = data_values["epochs"][0]["iso_format"]
+            date_str = first_epoch_iso.split('T')[0].replace('-', '')
 
-            # For each bitstring
-            for bitstring_data in data:
-                bitstring_index = bitstring_data["bitstring_index"]
-                bitstring_group = f.create_group(
-                    f"bitstring_{bitstring_index}")
+            # Create CDF file
+            cdf_file_path = output_path / \
+                f"AESA_L1_{date_str}_bitstring_{bitstring_index}_v01.cdf"
 
-                # Also add global attributes to each bitstring group
-                if "global_attributes" in bitstring_data["data"]:
-                    for key, value in bitstring_data["data"]["global_attributes"].items():
-                        bitstring_group.attrs[key] = value
+            print(f"Generating CDF file for Bitstring {bitstring_index}...")
 
-                # Process EPOCH data
-                epochs_group = bitstring_group.create_group("epochs")
-                epochs = bitstring_data["data"]["epochs"]
-                epochs_group.create_dataset(
-                    "timestamp_ms", data=[e["timestamp_ms"] for e in epochs])
-                epochs_group.create_dataset("iso_format", data=[
-                                            e["iso_format"] for e in epochs], dtype=h5py.special_dtype(vlen=str))
+            # Create a new CDF file
+            with cdf.CDF(str(cdf_file_path), '') as cdf_file:
+                # Set global attributes strictly according to the image
+                cdf_file.attrs["Project"] = "A-ESA science payload"
+                cdf_file.attrs["Discipline"] = "lunar surface plasma environment"
+                cdf_file.attrs["Data_type"] = "L1 > Level 1 uncalibrated count data"
+                cdf_file.attrs["Descriptor"] = "A-ESA"
+                cdf_file.attrs["File_naming_convention"] = "source_datatype_descriptor"
+                cdf_file.attrs["Data_version"] = "V01"
+                cdf_file.attrs["PI_name"] = "Lin, Shin-Fa / Chang, Tzu-Fang"
+                cdf_file.attrs["PI_affiliation"] = "TASA / NCKU"
+                cdf_file.attrs["TEXT"] = "All-Sky Electrostatic Analyze (10eV ~ 10KeV)"
+                cdf_file.attrs["Instrument_type"] = "Particles (space)"
+                cdf_file.attrs["Logical_source"] = "AESA_L1"
+                cdf_file.attrs["Logical_file_id"] = f"AESA_L1_{date_str}_v01"
+                cdf_file.attrs["Logical_source_description"] = "Level 1 uncalibrated count data for 10eV ~ 10KeV electron distribution on the lunar surface"
+                cdf_file.attrs["Time_resolution"] = "Cycle period ~ 80 s"
+                cdf_file.attrs["Rules_of_use"] = "TBD"
+                cdf_file.attrs["Generated_by"] = "TASA / NCKU"
+                cdf_file.attrs["Generation_date"] = datetime.datetime.now().strftime(
+                    "%Y-%m-%d")
+                cdf_file.attrs["Acknowledgement"] = "TBD"
+                cdf_file.attrs["LINK_TEXT"] = "TBD"
+                cdf_file.attrs["LINK_TITLE"] = "TBD"
 
-                # Process electron counts with a more efficient structure
-                counts_data = np.zeros(
+                # Create variables according to the image
+
+                # EPOCH (1 X 45)
+                epoch_ms = [e["timestamp_ms"] for e in data_values["epochs"]]
+                # Convert to CDF_TIME_TT2000 format
+                cdf_file.new('EPOCH', epoch_ms, type=cdf.const.CDF_TIME_TT2000)
+
+                # Electron_Count (16 x 7 x 6 x 45) - note dimensions match the image
+                electron_counts = np.zeros(
                     (self.num_energy, self.num_azimuthal, self.num_incident, self.num_cycles), dtype=np.int32)
-                for entry in bitstring_data["data"]["electron_counts"]:
-                    e, a, i, c = entry["energy_idx"], entry["azimuthal_idx"], entry["incident_idx"], entry["cycle"]
-                    counts_data[e, a, i, c] = entry["count"]
-                bitstring_group.create_dataset(
-                    "electron_counts", data=counts_data)
+                for entry in data_values["electron_counts"]:
+                    i, a, e, c = entry["incident_idx"], entry["azimuthal_idx"], entry["energy_idx"], entry["cycle"]
+                    # Reshape to match the image specification
+                    electron_counts[e, a, i, c] = entry["count"]
 
-                # Process background counts
-                bg_counts_data = np.zeros(
+                cdf_file.new('Electron_Count', electron_counts,
+                             type=cdf.const.CDF_INT4)
+
+                # BG_Count (16 x 7 x 6 x 45) - note dimensions match the image
+                bg_counts = np.zeros(
                     (self.num_energy, self.num_azimuthal, self.num_incident, self.num_cycles), dtype=np.int32)
-                for entry in bitstring_data["data"]["bg_counts"]:
-                    e, a, i, c = entry["energy_idx"], entry["azimuthal_idx"], entry["incident_idx"], entry["cycle"]
-                    bg_counts_data[e, a, i, c] = entry["count"]
-                bitstring_group.create_dataset(
-                    "bg_counts", data=bg_counts_data)
+                for entry in data_values["bg_counts"]:
+                    i, a, e, c = entry["incident_idx"], entry["azimuthal_idx"], entry["energy_idx"], entry["cycle"]
+                    # Reshape to match the image specification
+                    bg_counts[e, a, i, c] = entry["count"]
 
-                # Process energy measurements
-                energy_data = np.zeros(
+                cdf_file.new('BG_Count', bg_counts, type=cdf.const.CDF_INT4)
+
+                # Measure_Energy (16 x 45)
+                energy_values = np.zeros(
                     (self.num_energy, self.num_cycles), dtype=np.float32)
-                for entry in bitstring_data["data"]["measure_energy"]:
+                for entry in data_values["measure_energy"]:
                     e, c = entry["energy_idx"], entry["cycle"]
-                    energy_data[e, c] = entry["energy_value"]
-                bitstring_group.create_dataset(
-                    "measure_energy", data=energy_data)
+                    energy_values[e, c] = entry["energy_value"]
 
-                # Process HV output
-                electrode_names = ["upper", "middle", "lower"]
-                hv_data = np.zeros((self.num_electrode, self.num_energy,
-                                   self.num_incident, self.num_cycles), dtype=np.float32)
-                for entry in bitstring_data["data"]["output_hv"]:
+                cdf_file.new('Measure_Energy', energy_values,
+                             type=cdf.const.CDF_FLOAT)
+
+                # Output_HV (3 x 16 x 6 x 45)
+                output_hv = np.zeros((self.num_electrode, self.num_energy,
+                                     self.num_incident, self.num_cycles), dtype=np.float32)
+                for entry in data_values["output_hv"]:
                     el, e, i, c = entry["electrode_idx"], entry["energy_idx"], entry["incident_idx"], entry["cycle"]
-                    hv_data[el, e, i, c] = entry["voltage"]
+                    output_hv[el, e, i, c] = entry["voltage"]
 
-                hv_group = bitstring_group.create_group("output_hv")
-                hv_group.create_dataset("values", data=hv_data)
-                hv_group.attrs["electrode_names"] = electrode_names
+                cdf_file.new('Output_HV', output_hv, type=cdf.const.CDF_FLOAT)
 
-                # Process data taking times
-                start_times_group = bitstring_group.create_group(
-                    "datataking_time_start")
-                start_times = bitstring_data["data"]["datataking_time_start"]
-                start_times_group.create_dataset(
-                    "timestamp_ms", data=[t["timestamp_ms"] for t in start_times])
-                start_times_group.create_dataset("iso_format", data=[
-                                                 t["iso_format"] for t in start_times], dtype=h5py.special_dtype(vlen=str))
+                # Datataking_Time_Start (1 x 45)
+                start_times_ms = [t["timestamp_ms"]
+                                  for t in data_values["datataking_time_start"]]
+                # Reshape as 1 x 45 array to match the image
+                start_times_reshaped = np.array(
+                    start_times_ms).reshape(1, self.num_cycles)
+                cdf_file.new('Datataking_Time_Start',
+                             start_times_reshaped, type=cdf.const.CDF_TIME_TT2000)
 
-                # Process durations
+                # Data_Time_Duration (1 x 45)
                 durations = np.array(
-                    [d["duration_seconds"] for d in bitstring_data["data"]["data_time_duration"]], dtype=np.float32)
-                bitstring_group.create_dataset(
-                    "data_time_duration", data=durations)
+                    [d["duration_seconds"] for d in data_values["data_time_duration"]], dtype=np.float32)
+                # Reshape as 1 x 45 array to match the image
+                durations_reshaped = durations.reshape(1, self.num_cycles)
+                cdf_file.new('Data_Time_Duration',
+                             durations_reshaped, type=cdf.const.CDF_FLOAT)
 
-                # Process data quality
-                quality_data = np.zeros(
+                # Data_Quality (16 x 7 x 6 x 45)
+                data_quality = np.zeros(
                     (self.num_energy, self.num_azimuthal, self.num_incident, self.num_cycles), dtype=np.uint8)
-                for entry in bitstring_data["data"]["data_quality"]:
+                for entry in data_values["data_quality"]:
                     e, a, i, c = entry["energy_idx"], entry["azimuthal_idx"], entry["incident_idx"], entry["cycle"]
-                    quality_data[e, a, i, c] = entry["quality"]
-                bitstring_group.create_dataset(
-                    "data_quality", data=quality_data)
+                    data_quality[e, a, i, c] = entry["quality"]
 
-        print(f"Parsed data saved in HDF5 format to {output_file}")
+                cdf_file.new('Data_Quality', data_quality,
+                             type=cdf.const.CDF_UINT1)
+
+            print(f"CDF file generated: {cdf_file_path}")
 
 
 def main():
     parser = argparse.ArgumentParser(
-        description='Parse OSEPL4 L1 CDF hex bitstrings')
+        description='Parse OSEPL4 L1 CDF hex bitstrings and generate CDF directly')
     parser.add_argument(
         'input_file', help='Input file containing hex bitstrings')
     parser.add_argument(
-        '--output-format', choices=['json', 'hdf5'], default='json', help='Output format (default: json)')
-    parser.add_argument(
-        '--output-file', help='Output file name (default: derived from input filename)')
+        '--output-json', default='parsed_data.json', help='Output JSON filename')
+    parser.add_argument('--output-cdf-dir', default='./cdf_files',
+                        help='Output directory for CDF files')
+    parser.add_argument('--json-only', action='store_true',
+                        help='Only generate JSON, skip CDF')
+    parser.add_argument('--cdf-only', action='store_true',
+                        help='Only generate CDF, skip JSON')
 
     args = parser.parse_args()
 
-    # Set default output file name if not provided
-    if args.output_file is None:
-        input_path = Path(args.input_file)
-        if args.output_format == 'json':
-            args.output_file = str(input_path.with_suffix('.json'))
-        else:
-            args.output_file = str(input_path.with_suffix('.h5'))
+    # Check if input file exists
+    input_path = Path(args.input_file)
+    if not input_path.exists():
+        print(f"Error: Input file not found: {input_path}")
+        return
 
     # Parse bitstrings
     parser = BitStringParser()
-    parsed_data = parser.parse_multiple_bitstrings(args.input_file)
+    try:
+        parsed_data = parser.parse_multiple_bitstrings(args.input_file)
 
-    # Save in selected format
-    if args.output_format == 'json':
-        parser.save_as_json(parsed_data, args.output_file)
-    else:
-        parser.create_hdf5_structure(parsed_data, args.output_file)
+        # Save as JSON if not cdf-only
+        if not args.cdf_only:
+            parser.save_as_json(parsed_data, args.output_json)
+
+        # Generate CDF files directly if not json-only
+        if not args.json_only:
+            parser.generate_cdf_directly(parsed_data, args.output_cdf_dir)
+
+    except Exception as e:
+        print(f"Error: {e}")
+        import traceback
+        traceback.print_exc()
 
 
 if __name__ == "__main__":
