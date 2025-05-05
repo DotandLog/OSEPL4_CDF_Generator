@@ -180,7 +180,7 @@ def save_single_bitstring_cdf_omni(output_file, l2_data):
         cdf["bitstring_index"] = [l2_data["bitstring_index"]]
         cdf["EPOCH"] = l2_data["epochs"]
         cdf["Electron_Flux_Omni"] = electron_flux_omni.tolist()  # 全向通量
-        cdf["BG_Flux_Avg"] = bg_flux_avg.tolist()  # 背景通量平均值
+        cdf["BG_Flux_Ave"] = bg_flux_avg.tolist()  # 背景通量平均值
         cdf["Measure_Energy"] = measure_energy_array.tolist()
         cdf["Datataking_Time_Start"] = l2_data["datataking_time_start"]
         cdf["Data_Time_Duration"] = l2_data["data_time_duration"]
@@ -189,7 +189,7 @@ def save_single_bitstring_cdf_omni(output_file, l2_data):
         cdf["EPOCH"].attrs["UNITS"] = "ms since 1970-01-01"
         cdf["EPOCH"].attrs["DESCRIPTION"] = "Start time of each data cycle in milliseconds"
         cdf["Electron_Flux_Omni"].attrs["DESCRIPTION"] = "The calculation of omni-directional energy flux"
-        cdf["BG_Flux_Avg"].attrs["DESCRIPTION"] = "Averaged Flux Data for background"
+        cdf["BG_Flux_Ave"].attrs["DESCRIPTION"] = "Averaged Flux Data for background"
         cdf["Measure_Energy"].attrs["DESCRIPTION"] = "Sweeping Energy Value"
         cdf["Datataking_Time_Start"].attrs["DESCRIPTION"] = "Time start of each data"
         cdf["Data_Time_Duration"].attrs["UNITS"] = "seconds"
