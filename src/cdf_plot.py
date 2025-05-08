@@ -85,17 +85,26 @@ def plot_cdf_mult_heatmaps(folder_path, save_dir=None):
         return
     
     for cdf_path in cdf_files:
+        if 'omni' in cdf_path: 
+            is_omni = True
+            Electron_Flux = 'Electron_Flux_Omni'
+        else: 
+            is_omni = False
+            Electron_Flux = 'Electron_Flux_3D'
         print(f"Processing: {os.path.basename(cdf_path)}")
-        cdf = pycdf.CDF(cdf_path)
-
-        total_counts_all = cdf["total_counts_per_energy"][:]  # (10, 6, 7, 16, 45)
-        time_data = cdf["epoch"][:]                           # (45,)
+        cdf = pycdf.CDF(cdf_path)        
+        total_counts_all = cdf[Electron_Flux][:]  # (, 6, 7, 16, 45)
+        time_data = cdf["EPOCH"][:]                           # (45,)
         cdf.close()
 
         if len(total_counts_all.shape) < 5:
             print(total_counts_all.shape)
-            x, y, num, e = total_counts_all.shape[:]
-            total_counts_all = total_counts_all.reshape(1, x, y, num, e)
+            if is_omni == False:
+                x, y, num, e = total_counts_all.shape[:]
+                total_counts_all = total_counts_all.reshape(1, x, y, num, e)
+            # else: 
+            #     x, y = total_counts_all.shape[:]
+            #     total_counts_all = total_counts_all.reshape(1, x, y)
 
         # Convert timestamp
         time_raw = np.ravel(time_data)
@@ -108,45 +117,85 @@ def plot_cdf_mult_heatmaps(folder_path, save_dir=None):
         x_start = mdates.date2num(time_dt[0])
         x_end = mdates.date2num(time_dt[-1])
 
-        num_data = total_counts_all.shape[0]     # 10
-        num_figs = total_counts_all.shape[1]     # 6
-        num_subplots = total_counts_all.shape[2] # 7
+        if is_omni == False:
 
-        y_ticks = [0, 8, 15]
-        y_labels = [f"Ch{ch}" for ch in y_ticks]
+            num_data = total_counts_all.shape[0]     # 10
+            num_figs = total_counts_all.shape[1]     # 6
+            num_subplots = total_counts_all.shape[2] # 7
 
-        for data_idx in range(num_data):
-            for fig_idx in range(num_figs):
-                fig, axes = plt.subplots(num_subplots, 1, figsize=(10, 14), sharex=True, sharey=True)
+            y_ticks = [0, 8, 15]
+            y_labels = [f"Ch{ch}" for ch in y_ticks]
 
-                for bit_idx in range(num_subplots):
-                    ax = axes[bit_idx]
-                    counts = total_counts_all[data_idx][fig_idx][bit_idx]  # shape (16, 45)
+            for data_idx in range(num_data):
+                for fig_idx in range(num_figs):
+                    fig, axes = plt.subplots(num_subplots, 1, figsize=(10, 14), sharex=True, sharey=True)
 
-                    im = ax.imshow(counts, aspect='auto', origin='lower',
-                                   extent=[x_start, x_end, 0, 16],
-                                   cmap='viridis', norm=plt.cm.colors.LogNorm())
+                    for bit_idx in range(num_subplots):
+                        ax = axes[bit_idx]
+                        counts = total_counts_all[data_idx][fig_idx][bit_idx]  # shape (16, 45)
 
-                    ax.set_ylabel(f"Bit {bit_idx}")
-                    ax.set_yticks(y_ticks)
-                    ax.set_yticklabels(y_labels)
-                    ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d %H:%M'))
+                        im = ax.imshow(counts, aspect='auto', origin='lower',
+                                    extent=[x_start, x_end, 0, 16],
+                                    cmap='viridis', norm=plt.cm.colors.LogNorm())
 
-                axes[-1].set_xlabel("Time (UTC)")
-                plt.xticks(rotation=45)
+                        ax.set_ylabel(f"Bit {bit_idx}")
+                        ax.set_yticks(y_ticks)
+                        ax.set_yticklabels(y_labels)
+                        ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d %H:%M'))
 
-                cbar_ax = fig.add_axes([0.92, 0.1, 0.02, 0.8])
-                fig.colorbar(im, cax=cbar_ax, orientation='vertical', label="Counts (log scale)")
+                    axes[-1].set_xlabel("Time (UTC)")
+                    plt.xticks(rotation=45)
 
-                plt.tight_layout(rect=[0, 0, 0.9, 1])
-                plt.suptitle(f"{os.path.basename(cdf_path)} | Sample {data_idx + 1} - Plot {fig_idx + 1}", fontsize=16, y=1.02)
-                
-                
-                os.makedirs(save_dir, exist_ok=True)
-                save_path = os.path.join(save_dir, f"{os.path.basename(cdf_path)}_sample{data_idx+1}_fig{fig_idx+1}.png")
-                plt.savefig(save_path, bbox_inches='tight')
-                print(f"Saved: {save_path}")
+                    cbar_ax = fig.add_axes([0.92, 0.1, 0.02, 0.8])
+                    fig.colorbar(im, cax=cbar_ax, orientation='vertical', label="Counts (log scale)")
+
+                    plt.tight_layout(rect=[0, 0, 0.9, 1])
+                    plt.suptitle(f"{os.path.basename(cdf_path)} | Sample {data_idx + 1} - Plot {fig_idx + 1}", fontsize=16, y=1.02)
                     
+                    
+                    os.makedirs(save_dir, exist_ok=True)
+                    save_path = os.path.join(save_dir, f"{os.path.basename(cdf_path)}_sample{data_idx+1}_fig{fig_idx+1}.png")
+                    plt.savefig(save_path, bbox_inches='tight')
+                    print(f"Saved: {save_path}")
+            
+        else: 
+            num_data = total_counts_all.shape[0]     # 10
+            # num_figs = total_counts_all.shape[1]     # 6
+            num_subplots = 1 # 7
+
+            y_ticks = [0, 8, 15]
+            y_labels = [f"Ch{ch}" for ch in y_ticks]
+
+            # for data_idx in range(num_data):
+                # for fig_idx in range(num_figs):
+            fig, ax = plt.subplots(num_subplots, 1, figsize=(12, 6), sharex=True, sharey=True)
+
+            # for bit_idx in range(num_subplots):
+            counts = total_counts_all  # shape (16, 45)
+
+            im = ax.imshow(counts, aspect='auto', origin='lower',
+                        extent=[x_start, x_end, 0, 16],
+                        cmap='viridis', norm=plt.cm.colors.LogNorm())
+
+            # ax.set_ylabel(f"Bit {bit_idx}")
+            ax.set_yticks(y_ticks)
+            ax.set_yticklabels(y_labels)
+            ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d %H:%M'))
+
+            ax.set_xlabel("Time (UTC)")
+            plt.xticks(rotation=45)
+
+            cbar_ax = fig.add_axes([0.92, 0.1, 0.02, 0.8])
+            fig.colorbar(im, cax=cbar_ax, orientation='vertical', label="Counts (log scale)")
+
+            plt.tight_layout(rect=[0, 0, 0.9, 1])
+            plt.suptitle(f"{os.path.basename(cdf_path)} | Sample Omni Plot ", fontsize=16, y=1.02)
+            
+            
+            os.makedirs(save_dir, exist_ok=True)
+            save_path = os.path.join(save_dir, f"{os.path.basename(cdf_path)}_Sample_Omni_Plot.png")
+            plt.savefig(save_path, bbox_inches='tight')
+            print(f"Saved: {save_path}")
                 # plt.show()
             
 # test
