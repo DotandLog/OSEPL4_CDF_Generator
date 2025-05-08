@@ -98,7 +98,7 @@ def plot_cdf_mult_heatmaps(folder_path, save_dir=None):
         cdf.close()
 
         if len(total_counts_all.shape) < 5:
-            print(total_counts_all.shape)
+            # print(total_counts_all.shape)
             if is_omni == False:
                 x, y, num, e = total_counts_all.shape[:]
                 total_counts_all = total_counts_all.reshape(1, x, y, num, e)
@@ -149,7 +149,7 @@ def plot_cdf_mult_heatmaps(folder_path, save_dir=None):
                     cbar_ax = fig.add_axes([0.92, 0.1, 0.02, 0.8])
                     fig.colorbar(im, cax=cbar_ax, orientation='vertical', label="Counts (log scale)")
 
-                    plt.tight_layout(rect=[0, 0, 0.9, 1])
+                    plt.subplots_adjust(left=0.1, bottom=0.1, right=0.9, top=0.99, wspace=0.3, hspace=0.3)
                     plt.suptitle(f"{os.path.basename(cdf_path)} | Sample {data_idx + 1} - Plot {fig_idx + 1}", fontsize=16, y=1.02)
                     
                     
@@ -157,6 +157,7 @@ def plot_cdf_mult_heatmaps(folder_path, save_dir=None):
                     save_path = os.path.join(save_dir, f"{os.path.basename(cdf_path)}_sample{data_idx+1}_fig{fig_idx+1}.png")
                     plt.savefig(save_path, bbox_inches='tight')
                     print(f"Saved: {save_path}")
+                    plt.close()
             
         else: 
             num_data = total_counts_all.shape[0]     # 10
@@ -187,8 +188,9 @@ def plot_cdf_mult_heatmaps(folder_path, save_dir=None):
 
             cbar_ax = fig.add_axes([0.92, 0.1, 0.02, 0.8])
             fig.colorbar(im, cax=cbar_ax, orientation='vertical', label="Counts (log scale)")
+            plt.subplots_adjust(left=0.1, bottom=0.1, right=0.9, top=0.92, wspace=0.3, hspace=0.3)
 
-            plt.tight_layout(rect=[0, 0, 0.9, 1])
+            # plt.tight_layout(rect=[0, 0, 0.9, 1])
             plt.suptitle(f"{os.path.basename(cdf_path)} | Sample Omni Plot ", fontsize=16, y=1.02)
             
             
@@ -197,7 +199,8 @@ def plot_cdf_mult_heatmaps(folder_path, save_dir=None):
             plt.savefig(save_path, bbox_inches='tight')
             print(f"Saved: {save_path}")
                 # plt.show()
-            
+            plt.close()
+
 # test
 # plot_cdf_mult_heatmaps("../input", save_dir='../output_img')
 def main():
