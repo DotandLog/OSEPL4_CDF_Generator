@@ -50,6 +50,9 @@ def epoch_to_bytes(epoch):
 def generate_electron_counts(num_energy=16, num_azimuthal=7, num_incident=6, num_cycles=45):
     """
     Generate random electron count data with values from 100 to 1000
+    With specific ranges for energy_idx 6 and 7 at certain incident angles:
+    - For incident_idx 5: values range from 750-1000
+    - For incident_idx 4: values range from 500-750
 
     Args:
         num_energy: Number of energy steps
@@ -60,8 +63,24 @@ def generate_electron_counts(num_energy=16, num_azimuthal=7, num_incident=6, num
     Returns:
         4D array of electron counts in order (incident, azimuthal, energy, cycle)
     """
-    # Generate with values in the range 100-1000
-    return np.random.randint(100, 1001, size=(num_incident, num_azimuthal, num_energy, num_cycles))
+    # Generate base array with values in the range 100-1000
+    electron_counts = np.random.randint(100, 1001, size=(
+        num_incident, num_azimuthal, num_energy, num_cycles))
+
+    # Apply special ranges for specific indices
+    # For incident_idx 5 (last incident angle), energy_idx 6 and 7: range 750-1000
+    for a in range(num_azimuthal):
+        for c in range(num_cycles):
+            electron_counts[5, a, 6, c] = np.random.randint(750, 1001)
+            electron_counts[5, a, 7, c] = np.random.randint(750, 1001)
+
+    # For incident_idx 4, energy_idx 6 and 7: range 500-750
+    for a in range(num_azimuthal):
+        for c in range(num_cycles):
+            electron_counts[4, a, 6, c] = np.random.randint(500, 751)
+            electron_counts[4, a, 7, c] = np.random.randint(500, 751)
+
+    return electron_counts
 
 
 def generate_measure_energy(num_energy=16, num_cycles=45):
