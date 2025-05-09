@@ -101,7 +101,9 @@ def plot_cdf_mult_heatmaps(folder_path, save_dir=None):
             # print(total_counts_all.shape)
             if is_omni == False:
                 x, y, num, e = total_counts_all.shape[:]
-                total_counts_all = total_counts_all.reshape(1, num, y, x, e)
+                total_counts_all = total_counts_all.reshape(1, x, y, num, e)
+                new_order = (0, 3, 2, 1, 4)
+                total_counts_all = np.transpose(total_counts_all, axes=new_order)
             # else: 
             #     x, y = total_counts_all.shape[:]
             #     total_counts_all = total_counts_all.reshape(1, x, y)
@@ -119,10 +121,10 @@ def plot_cdf_mult_heatmaps(folder_path, save_dir=None):
 
         if is_omni == False:
 
-            num_data = total_counts_all.shape[0]     # 10
+            num_data = total_counts_all.shape[0]     # num_data
             num_figs = total_counts_all.shape[1]     # 6
             num_subplots = total_counts_all.shape[2] # 7
-
+            # print(total_counts_all.shape)
             y_ticks = [0, 8, 15]
             y_labels = [f"Ch{ch}" for ch in y_ticks]
 
