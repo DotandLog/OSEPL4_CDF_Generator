@@ -101,7 +101,7 @@ def plot_cdf_mult_heatmaps(folder_path, save_dir=None):
             # print(total_counts_all.shape)
             if is_omni == False:
                 x, y, num, e = total_counts_all.shape[:]
-                total_counts_all = total_counts_all.reshape(1, x, y, num, e)
+                total_counts_all = total_counts_all.reshape(1, num, y, x, e)
             # else: 
             #     x, y = total_counts_all.shape[:]
             #     total_counts_all = total_counts_all.reshape(1, x, y)
@@ -133,7 +133,7 @@ def plot_cdf_mult_heatmaps(folder_path, save_dir=None):
                     for bit_idx in range(num_subplots):
                         ax = axes[bit_idx]
                         counts = total_counts_all[data_idx][fig_idx][bit_idx]  # shape (16, 45)
-
+                        # print(counts.shape)
                         im = ax.imshow(counts, aspect='auto', origin='lower',
                                     extent=[x_start, x_end, 0, 16],
                                     cmap='viridis', norm=plt.cm.colors.LogNorm())
