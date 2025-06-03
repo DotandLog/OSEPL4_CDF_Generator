@@ -83,6 +83,103 @@ def generate_electron_counts(num_energy=16, num_azimuthal=7, num_incident=6, num
     return electron_counts
 
 
+def generate_electron_counts_setting1(num_energy=16, num_azimuthal=7, num_incident=6, num_cycles=45):
+    """
+    Generate electron count data with Setting 1:
+    - For incident_idx 5 and energy_idx 6,7: values 500-750
+    - For incident_idx 4 and energy_idx 6,7: values 750-1000
+    - For rest incident_idx and energy_idx 6,7: values 0-500
+    - For all other positions: values 100-1000
+    
+    Args:
+        num_energy: Number of energy steps
+        num_azimuthal: Number of azimuthal angles
+        num_incident: Number of incident angles
+        num_cycles: Number of cycles
+        
+    Returns:
+        4D array of electron counts in order (incident, azimuthal, energy, cycle)
+    """
+    # Generate base array with values in the range 100-1000
+    electron_counts = np.random.randint(100, 1001, size=(num_incident, num_azimuthal, num_energy, num_cycles))
+    
+    # Apply special ranges for energy_idx 6 and 7
+    for a in range(num_azimuthal):
+        for c in range(num_cycles):
+            for energy_idx in [6, 7]:  # 700eV and 800eV
+                # For incident_idx 5: range 500-750
+                electron_counts[5, a, energy_idx, c] = np.random.randint(500, 751)
+                
+                # For incident_idx 4: range 750-1000
+                electron_counts[4, a, energy_idx, c] = np.random.randint(750, 1001)
+                
+                # For rest incident_idx (0, 1, 2, 3): range 0-500
+                for incident_idx in [0, 1, 2, 3]:
+                    electron_counts[incident_idx, a, energy_idx, c] = np.random.randint(0, 501)
+    
+    return electron_counts
+
+
+def generate_electron_counts_setting2(num_energy=16, num_azimuthal=7, num_incident=6, num_cycles=45):
+    """
+    Generate electron count data with Setting 2:
+    - For azimuthal 0:
+      * incident_idx 0 and energy_idx 6,7: values 750-1000
+      * incident_idx 1 and energy_idx 6,7: values 500-750
+      * rest incident_idx and energy_idx 6,7: values 0-500
+    - For azimuthal adjacent to 0 (1 and 6): same as azimuthal 0 but × 0.8
+    - For rest azimuthal and energy_idx 6,7: values 0-400
+    - For all other positions: values 100-1000
+    
+    Args:
+        num_energy: Number of energy steps
+        num_azimuthal: Number of azimuthal angles
+        num_incident: Number of incident angles
+        num_cycles: Number of cycles
+        
+    Returns:
+        4D array of electron counts in order (incident, azimuthal, energy, cycle)
+    """
+    # Generate base array with values in the range 100-1000
+    electron_counts = np.random.randint(100, 1001, size=(num_incident, num_azimuthal, num_energy, num_cycles))
+    
+    # Apply special ranges for energy_idx 6 and 7
+    for c in range(num_cycles):
+        for energy_idx in [6, 7]:  # 700eV and 800eV
+            
+            # For azimuthal 0
+            azimuthal_idx = 0
+            # incident_idx 0: range 750-1000
+            electron_counts[0, azimuthal_idx, energy_idx, c] = np.random.randint(750, 1001)
+            # incident_idx 1: range 500-750
+            electron_counts[1, azimuthal_idx, energy_idx, c] = np.random.randint(500, 751)
+            # rest incident_idx (2, 3, 4, 5): range 0-500
+            for incident_idx in [2, 3, 4, 5]:
+                electron_counts[incident_idx, azimuthal_idx, energy_idx, c] = np.random.randint(0, 501)
+            
+            # For azimuthal adjacent to 0 (1 and 6): same as azimuthal 0 but × 0.8
+            for adjacent_azimuthal in [1, 6]:
+                # incident_idx 0: (750-1000) × 0.8 = 600-800
+                base_value_0 = np.random.randint(750, 1001)
+                electron_counts[0, adjacent_azimuthal, energy_idx, c] = int(base_value_0 * 0.8)
+                
+                # incident_idx 1: (500-750) × 0.8 = 400-600
+                base_value_1 = np.random.randint(500, 751)
+                electron_counts[1, adjacent_azimuthal, energy_idx, c] = int(base_value_1 * 0.8)
+                
+                # rest incident_idx (2, 3, 4, 5): (0-500) × 0.8 = 0-400
+                for incident_idx in [2, 3, 4, 5]:
+                    base_value = np.random.randint(0, 501)
+                    electron_counts[incident_idx, adjacent_azimuthal, energy_idx, c] = int(base_value * 0.8)
+            
+            # For rest azimuthal (2, 3, 4, 5) and energy_idx 6,7: values 0-400
+            for azimuthal_idx in [2, 3, 4, 5]:
+                for incident_idx in range(num_incident):
+                    electron_counts[incident_idx, azimuthal_idx, energy_idx, c] = np.random.randint(0, 401)
+    
+    return electron_counts
+
+
 def generate_measure_energy(num_energy=16, num_cycles=45):
     """
     Generate energy values for each energy step
@@ -185,6 +282,23 @@ def generate_data_quality(num_energy=16, num_azimuthal=7, num_incident=6, num_cy
     return quality
 
 
+def generate_bg_counts(num_energy=16, num_azimuthal=7, num_incident=6, num_cycles=45):
+    """
+    Generate random background count data with values from 0 to 100
+
+    Args:
+        num_energy: Number of energy steps
+        num_azimuthal: Number of azimuthal angles
+        num_incident: Number of incident angles
+        num_cycles: Number of cycles
+
+    Returns:
+        4D array of background counts in order (incident, azimuthal, energy, cycle)
+    """
+    # Generate with values in the range 0-100
+    return np.random.randint(0, 101, size=(num_incident, num_azimuthal, num_energy, num_cycles))
+
+
 def value_to_bytes(value, num_bytes=2, is_float=False):
     """
     Convert a value to bytes representation
@@ -214,10 +328,14 @@ def value_to_bytes(value, num_bytes=2, is_float=False):
             return struct.pack('>Q', value)
 
 
-def generate_l1_cdf_hex_bitstring():
+def create_hex_bitstring_from_data(epochs, electron_counts, bg_counts, measure_energy, 
+                                 output_hv, start_times, durations, data_quality):
     """
-    Generate a hex bitstring representing the L1 CDF data
-
+    Create hex bitstring from data components
+    
+    Args:
+        epochs, electron_counts, bg_counts, measure_energy, output_hv, start_times, durations, data_quality
+        
     Returns:
         Hex bitstring
     """
@@ -226,16 +344,7 @@ def generate_l1_cdf_hex_bitstring():
     num_incident = 6
     num_cycles = 45
     num_electrode = 3
-
-    # Generate data
-    epochs = generate_tt2000_epoch()
-    electron_counts = generate_electron_counts()
-    bg_counts = generate_bg_counts()  # Background count data
-    measure_energy = generate_measure_energy()
-    output_hv = generate_output_hv()
-    start_times, durations = generate_datataking_time(epochs)
-    data_quality = generate_data_quality()
-
+    
     # Convert to bytes
     byte_array = bytearray()
 
@@ -248,8 +357,7 @@ def generate_l1_cdf_hex_bitstring():
         for a in range(num_azimuthal):
             for e in range(num_energy):
                 for c in range(num_cycles):
-                    byte_array.extend(value_to_bytes(
-                        electron_counts[i, a, e, c], 2))
+                    byte_array.extend(value_to_bytes(electron_counts[i, a, e, c], 2))
 
     # BG_Count (2 bytes per value)
     for i in range(num_incident):
@@ -261,16 +369,14 @@ def generate_l1_cdf_hex_bitstring():
     # Measure_Energy (4 bytes per value, float)
     for e in range(num_energy):
         for c in range(num_cycles):
-            byte_array.extend(value_to_bytes(
-                measure_energy[e, c], 4, is_float=True))
+            byte_array.extend(value_to_bytes(measure_energy[e, c], 4, is_float=True))
 
     # Output_HV (4 bytes per value, float)
     for el in range(num_electrode):
         for e in range(num_energy):
             for i in range(num_incident):
                 for c in range(num_cycles):
-                    byte_array.extend(value_to_bytes(
-                        output_hv[el, e, i, c], 4, is_float=True))
+                    byte_array.extend(value_to_bytes(output_hv[el, e, i, c], 4, is_float=True))
 
     # Datataking_Time_Start (8 bytes each, TT2000 format)
     for t in start_times:
@@ -285,13 +391,71 @@ def generate_l1_cdf_hex_bitstring():
         for a in range(num_azimuthal):
             for i in range(num_incident):
                 for c in range(num_cycles):
-                    byte_array.extend(value_to_bytes(
-                        data_quality[e, a, i, c], 1))
+                    byte_array.extend(value_to_bytes(data_quality[e, a, i, c], 1))
 
     # Convert to hex string
     hex_string = byte_array.hex()
-
     return hex_string
+
+
+def generate_l1_cdf_hex_bitstring():
+    """
+    Generate a hex bitstring representing the L1 CDF data (Original method)
+
+    Returns:
+        Hex bitstring
+    """
+    # Generate data
+    epochs = generate_tt2000_epoch()
+    electron_counts = generate_electron_counts()
+    bg_counts = generate_bg_counts()  # Background count data
+    measure_energy = generate_measure_energy()
+    output_hv = generate_output_hv()
+    start_times, durations = generate_datataking_time(epochs)
+    data_quality = generate_data_quality()
+
+    return create_hex_bitstring_from_data(epochs, electron_counts, bg_counts, measure_energy, 
+                                        output_hv, start_times, durations, data_quality)
+
+
+def generate_l1_cdf_hex_bitstring_setting1():
+    """
+    Generate a hex bitstring representing the L1 CDF data with Setting 1
+    
+    Returns:
+        Hex bitstring
+    """
+    # Generate data with Setting 1
+    epochs = generate_tt2000_epoch()
+    electron_counts = generate_electron_counts_setting1()
+    bg_counts = generate_bg_counts()  # Background count data
+    measure_energy = generate_measure_energy()
+    output_hv = generate_output_hv()
+    start_times, durations = generate_datataking_time(epochs)
+    data_quality = generate_data_quality()
+
+    return create_hex_bitstring_from_data(epochs, electron_counts, bg_counts, measure_energy, 
+                                        output_hv, start_times, durations, data_quality)
+
+
+def generate_l1_cdf_hex_bitstring_setting2():
+    """
+    Generate a hex bitstring representing the L1 CDF data with Setting 2
+    
+    Returns:
+        Hex bitstring
+    """
+    # Generate data with Setting 2
+    epochs = generate_tt2000_epoch()
+    electron_counts = generate_electron_counts_setting2()
+    bg_counts = generate_bg_counts()  # Background count data
+    measure_energy = generate_measure_energy()
+    output_hv = generate_output_hv()
+    start_times, durations = generate_datataking_time(epochs)
+    data_quality = generate_data_quality()
+
+    return create_hex_bitstring_from_data(epochs, electron_counts, bg_counts, measure_energy, 
+                                        output_hv, start_times, durations, data_quality)
 
 
 def save_l1_cdf_hex_bitstring(filename):
@@ -339,26 +503,9 @@ def save_l1_cdf_binary(filename):
     print(f"Total length: {len(binary_data)} bytes")
 
 
-def generate_bg_counts(num_energy=16, num_azimuthal=7, num_incident=6, num_cycles=45):
-    """
-    Generate random background count data with values from 0 to 100
-
-    Args:
-        num_energy: Number of energy steps
-        num_azimuthal: Number of azimuthal angles
-        num_incident: Number of incident angles
-        num_cycles: Number of cycles
-
-    Returns:
-        4D array of background counts in order (incident, azimuthal, energy, cycle)
-    """
-    # Generate with values in the range 0-100
-    return np.random.randint(0, 101, size=(num_incident, num_azimuthal, num_energy, num_cycles))
-
-
 def generate_multiple_bitstrings(count, output_file):
     """
-    Generate multiple hex bitstrings and save them to a text file
+    Generate multiple hex bitstrings and save them to a text file (Original method)
 
     Args:
         count: Number of bitstrings to generate
@@ -381,14 +528,89 @@ def generate_multiple_bitstrings(count, output_file):
     print(f"Generated {count} hex bitstrings saved to {output_path}")
 
 
-def main():
-    # Generate 10 bitstrings and save to text file
-    generate_multiple_bitstrings(10, "input/l1_cdf_data_10samples.txt")
+def generate_multiple_bitstrings_with_settings(count_per_setting, output_file):
+    """
+    Generate multiple hex bitstrings with different settings and save them to a single text file
+    
+    Args:
+        count_per_setting: Number of bitstrings to generate per setting
+        output_file: Output filename
+    """
+    # Use Path for cross-platform compatibility
+    output_path = Path(output_file)
+    
+    # Create parent directories if they don't exist
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    
+    with open(output_path, 'w') as f:
+        bitstring_counter = 1
+        
+        # Generate bitstrings with Setting 1
+        for i in range(count_per_setting):
+            print(f"Generating Setting 1 bitstring {i+1}/{count_per_setting}...")
+            hex_string = generate_l1_cdf_hex_bitstring_setting1()
+            f.write(f"Bitstring {bitstring_counter} (Setting 1):\n")
+            f.write(hex_string)
+            f.write("\n\n")
+            bitstring_counter += 1
+        
+        # Generate bitstrings with Setting 2
+        for i in range(count_per_setting):
+            print(f"Generating Setting 2 bitstring {i+1}/{count_per_setting}...")
+            hex_string = generate_l1_cdf_hex_bitstring_setting2()
+            f.write(f"Bitstring {bitstring_counter} (Setting 2):\n")
+            f.write(hex_string)
+            f.write("\n\n")
+            bitstring_counter += 1
+    
+    total_count = count_per_setting * 2
+    print(f"Generated {total_count} hex bitstrings ({count_per_setting} per setting) saved to {output_path}")
 
-    # Optional: Save a single sample as binary
-    # save_l1_cdf_binary("input/l1_cdf_data_sample.bin")
 
-    # Sample analysis of the data structure
+def generate_multiple_bitstrings_with_settings_separate(count_per_setting, output_dir="input"):
+    """
+    Generate multiple hex bitstrings with different settings and save them to separate text files
+    
+    Args:
+        count_per_setting: Number of bitstrings to generate per setting
+        output_dir: Output directory for files
+    """
+    # Use Path for cross-platform compatibility
+    output_path = Path(output_dir)
+    
+    # Create parent directories if they don't exist
+    output_path.mkdir(parents=True, exist_ok=True)
+    
+    # Generate Setting 1 bitstrings
+    setting1_file = output_path / "l1_cdf_data_setting1.txt"
+    with open(setting1_file, 'w') as f:
+        for i in range(count_per_setting):
+            print(f"Generating Setting 1 bitstring {i+1}/{count_per_setting}...")
+            hex_string = generate_l1_cdf_hex_bitstring_setting1()
+            f.write(f"Bitstring {i+1} (Setting 1):\n")
+            f.write(hex_string)
+            f.write("\n\n")
+    
+    print(f"Generated {count_per_setting} Setting 1 bitstrings saved to {setting1_file}")
+    
+    # Generate Setting 2 bitstrings
+    setting2_file = output_path / "l1_cdf_data_setting2.txt"
+    with open(setting2_file, 'w') as f:
+        for i in range(count_per_setting):
+            print(f"Generating Setting 2 bitstring {i+1}/{count_per_setting}...")
+            hex_string = generate_l1_cdf_hex_bitstring_setting2()
+            f.write(f"Bitstring {i+1} (Setting 2):\n")
+            f.write(hex_string)
+            f.write("\n\n")
+    
+    print(f"Generated {count_per_setting} Setting 2 bitstrings saved to {setting2_file}")
+    print(f"Total: {count_per_setting * 2} bitstrings in 2 separate files")
+
+
+def print_data_structure_analysis():
+    """
+    Print data structure analysis
+    """
     print("\nData Structure Analysis:")
     print("------------------------")
 
@@ -441,6 +663,79 @@ def main():
     total_size = epoch_size + electron_count_size + bg_count_size + measure_energy_size + \
         output_hv_size + start_time_size + duration_size + data_quality_size
     print(f"Total size: {total_size} bytes = {total_size / 1024:.2f} KB")
+
+
+def print_settings_summary():
+    """
+    Print summary of specialized settings
+    """
+    print("\nSpecialized Settings Summary:")
+    print("=" * 50)
+    print("Original Setting:")
+    print("  - incident_idx 5, energy_idx 6&7: 750-1000")
+    print("  - incident_idx 4, energy_idx 6&7: 500-750")
+    print("  - other positions: 100-1000")
+    print()
+    print("Setting 1 - Incident angle based:")
+    print("  - incident_idx 5, energy_idx 6&7: 500-750")
+    print("  - incident_idx 4, energy_idx 6&7: 750-1000")
+    print("  - other incident_idx, energy_idx 6&7: 0-500")
+    print("  - other positions: 100-1000")
+    print()
+    print("Setting 2 - Azimuthal angle based:")
+    print("  - azimuthal 0:")
+    print("    * incident_idx 0, energy_idx 6&7: 750-1000")
+    print("    * incident_idx 1, energy_idx 6&7: 500-750")
+    print("    * other incident_idx, energy_idx 6&7: 0-500")
+    print("  - azimuthal 1&6: same as azimuthal 0 but × 0.8")
+    print("  - other azimuthal, energy_idx 6&7: 0-400")
+    print("  - other positions: 100-1000")
+
+
+def main():
+    """
+    Main function with options for different generation modes
+    """
+    print("OSEPL4 Bitstring Generator")
+    print("=" * 30)
+    print("1. Generate original bitstrings (10 samples)")
+    print("2. Generate specialized setting bitstrings (5 per setting, separate files)")
+    print("3. Generate specialized setting bitstrings (5 per setting, combined file)")
+    print("4. Generate all types")
+    print("5. Show settings summary only")
+    
+    choice = input("\nEnter your choice (1-5): ").strip()
+    
+    if choice == "1":
+        # Generate original bitstrings
+        generate_multiple_bitstrings(10, "input/l1_cdf_data_10samples.txt")
+        print_data_structure_analysis()
+        
+    elif choice == "2":
+        # Generate specialized setting bitstrings in separate files
+        generate_multiple_bitstrings_with_settings_separate(5, "input")
+        print_settings_summary()
+        
+    elif choice == "3":
+        # Generate specialized setting bitstrings in combined file
+        generate_multiple_bitstrings_with_settings(5, "input/l1_cdf_data_specialized_settings.txt")
+        print_settings_summary()
+        
+    elif choice == "4":
+        # Generate all types
+        generate_multiple_bitstrings(10, "input/l1_cdf_data_10samples.txt")
+        generate_multiple_bitstrings_with_settings_separate(5, "input")
+        print_data_structure_analysis()
+        print_settings_summary()
+        
+    elif choice == "5":
+        # Show settings summary only
+        print_settings_summary()
+        
+    else:
+        print("Invalid choice. Running default (original bitstrings)...")
+        generate_multiple_bitstrings(10, "input/l1_cdf_data_10samples.txt")
+        print_data_structure_analysis()
 
 
 if __name__ == "__main__":
