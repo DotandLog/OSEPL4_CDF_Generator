@@ -86,10 +86,9 @@ def generate_electron_counts(num_energy=16, num_azimuthal=7, num_incident=6, num
 def generate_electron_counts_setting1(num_energy=16, num_azimuthal=7, num_incident=6, num_cycles=45):
     """
     Generate electron count data with Setting 1:
-    - For incident_idx 5 and energy_idx 6,7: values 500-750
-    - For incident_idx 4 and energy_idx 6,7: values 750-1000
-    - For rest incident_idx and energy_idx 6,7: values 0-500
-    - For all other positions: values 100-1000
+    垂直角度1 (incident_idx 0): 水平7個方向都在能階7和8的欄位用750~1000，其他用0~500
+    垂直角度2 (incident_idx 1): 水平7個方向都在能階7和8的欄位用500~750，其他用0~500
+    垂直角度3~6 (incident_idx 2-5): 水平7個方向的所有值全部都用0~500
     
     Args:
         num_energy: Number of energy steps
@@ -100,22 +99,22 @@ def generate_electron_counts_setting1(num_energy=16, num_azimuthal=7, num_incide
     Returns:
         4D array of electron counts in order (incident, azimuthal, energy, cycle)
     """
-    # Generate base array with values in the range 100-1000
-    electron_counts = np.random.randint(100, 1001, size=(num_incident, num_azimuthal, num_energy, num_cycles))
+    # Initialize with all values 0-500
+    electron_counts = np.random.randint(0, 501, size=(num_incident, num_azimuthal, num_energy, num_cycles))
     
-    # Apply special ranges for energy_idx 6 and 7
-    for a in range(num_azimuthal):
+    # 垂直角度1 (incident_idx 0): 能階7和8用750~1000
+    for a in range(num_azimuthal):  # 水平7個方向
         for c in range(num_cycles):
-            for energy_idx in [6, 7]:  # 700eV and 800eV
-                # For incident_idx 5: range 500-750
-                electron_counts[5, a, energy_idx, c] = np.random.randint(500, 751)
-                
-                # For incident_idx 4: range 750-1000
-                electron_counts[4, a, energy_idx, c] = np.random.randint(750, 1001)
-                
-                # For rest incident_idx (0, 1, 2, 3): range 0-500
-                for incident_idx in [0, 1, 2, 3]:
-                    electron_counts[incident_idx, a, energy_idx, c] = np.random.randint(0, 501)
+            for energy_idx in [6, 7]:  # 能階7和8 (index 6,7 對應 700eV, 800eV)
+                electron_counts[0, a, energy_idx, c] = np.random.randint(750, 1001)
+    
+    # 垂直角度2 (incident_idx 1): 能階7和8用500~750
+    for a in range(num_azimuthal):  # 水平7個方向
+        for c in range(num_cycles):
+            for energy_idx in [6, 7]:  # 能階7和8
+                electron_counts[1, a, energy_idx, c] = np.random.randint(500, 751)
+    
+    # 垂直角度3~6 (incident_idx 2-5): 已經在初始化時設為0~500，不需要額外處理
     
     return electron_counts
 
@@ -123,13 +122,10 @@ def generate_electron_counts_setting1(num_energy=16, num_azimuthal=7, num_incide
 def generate_electron_counts_setting2(num_energy=16, num_azimuthal=7, num_incident=6, num_cycles=45):
     """
     Generate electron count data with Setting 2:
-    - For azimuthal 0:
-      * incident_idx 0 and energy_idx 6,7: values 750-1000
-      * incident_idx 1 and energy_idx 6,7: values 500-750
-      * rest incident_idx and energy_idx 6,7: values 0-500
-    - For azimuthal adjacent to 0 (1 and 6): same as azimuthal 0 but × 0.8
-    - For rest azimuthal and energy_idx 6,7: values 0-400
-    - For all other positions: values 100-1000
+    水平角度4垂直角度6 (azimuthal_idx 3, incident_idx 5): 能階7和8用750~1000
+    水平角度3垂直角度6 (azimuthal_idx 2, incident_idx 5): 能階7和8用500~750
+    水平角度5垂直角度6 (azimuthal_idx 4, incident_idx 5): 能階7和8用500~750
+    其他的部分所有值全部都用0~500
     
     Args:
         num_energy: Number of energy steps
@@ -140,42 +136,23 @@ def generate_electron_counts_setting2(num_energy=16, num_azimuthal=7, num_incide
     Returns:
         4D array of electron counts in order (incident, azimuthal, energy, cycle)
     """
-    # Generate base array with values in the range 100-1000
-    electron_counts = np.random.randint(100, 1001, size=(num_incident, num_azimuthal, num_energy, num_cycles))
+    # Initialize with all values 0-500
+    electron_counts = np.random.randint(0, 501, size=(num_incident, num_azimuthal, num_energy, num_cycles))
     
-    # Apply special ranges for energy_idx 6 and 7
+    # 水平角度4垂直角度6 (azimuthal_idx 3, incident_idx 5): 能階7和8用750~1000
     for c in range(num_cycles):
-        for energy_idx in [6, 7]:  # 700eV and 800eV
-            
-            # For azimuthal 0
-            azimuthal_idx = 0
-            # incident_idx 0: range 750-1000
-            electron_counts[0, azimuthal_idx, energy_idx, c] = np.random.randint(750, 1001)
-            # incident_idx 1: range 500-750
-            electron_counts[1, azimuthal_idx, energy_idx, c] = np.random.randint(500, 751)
-            # rest incident_idx (2, 3, 4, 5): range 0-500
-            for incident_idx in [2, 3, 4, 5]:
-                electron_counts[incident_idx, azimuthal_idx, energy_idx, c] = np.random.randint(0, 501)
-            
-            # For azimuthal adjacent to 0 (1 and 6): same as azimuthal 0 but × 0.8
-            for adjacent_azimuthal in [1, 6]:
-                # incident_idx 0: (750-1000) × 0.8 = 600-800
-                base_value_0 = np.random.randint(750, 1001)
-                electron_counts[0, adjacent_azimuthal, energy_idx, c] = int(base_value_0 * 0.8)
-                
-                # incident_idx 1: (500-750) × 0.8 = 400-600
-                base_value_1 = np.random.randint(500, 751)
-                electron_counts[1, adjacent_azimuthal, energy_idx, c] = int(base_value_1 * 0.8)
-                
-                # rest incident_idx (2, 3, 4, 5): (0-500) × 0.8 = 0-400
-                for incident_idx in [2, 3, 4, 5]:
-                    base_value = np.random.randint(0, 501)
-                    electron_counts[incident_idx, adjacent_azimuthal, energy_idx, c] = int(base_value * 0.8)
-            
-            # For rest azimuthal (2, 3, 4, 5) and energy_idx 6,7: values 0-400
-            for azimuthal_idx in [2, 3, 4, 5]:
-                for incident_idx in range(num_incident):
-                    electron_counts[incident_idx, azimuthal_idx, energy_idx, c] = np.random.randint(0, 401)
+        for energy_idx in [6, 7]:  # 能階7和8
+            electron_counts[5, 3, energy_idx, c] = np.random.randint(750, 1001)
+    
+    # 水平角度3垂直角度6 (azimuthal_idx 2, incident_idx 5): 能階7和8用500~750
+    for c in range(num_cycles):
+        for energy_idx in [6, 7]:  # 能階7和8
+            electron_counts[5, 2, energy_idx, c] = np.random.randint(500, 751)
+    
+    # 水平角度5垂直角度6 (azimuthal_idx 4, incident_idx 5): 能階7和8用500~750
+    for c in range(num_cycles):
+        for energy_idx in [6, 7]:  # 能階7和8
+            electron_counts[5, 4, energy_idx, c] = np.random.randint(500, 751)
     
     return electron_counts
 
@@ -676,20 +653,21 @@ def print_settings_summary():
     print("  - incident_idx 4, energy_idx 6&7: 500-750")
     print("  - other positions: 100-1000")
     print()
-    print("Setting 1 - Incident angle based:")
-    print("  - incident_idx 5, energy_idx 6&7: 500-750")
-    print("  - incident_idx 4, energy_idx 6&7: 750-1000")
-    print("  - other incident_idx, energy_idx 6&7: 0-500")
-    print("  - other positions: 100-1000")
+    print("Setting 1 - 垂直角度基準:")
+    print("  - 垂直角度1 (incident_idx 0): 水平7個方向在能階7和8用750~1000，其他用0~500")
+    print("  - 垂直角度2 (incident_idx 1): 水平7個方向在能階7和8用500~750，其他用0~500")
+    print("  - 垂直角度3~6 (incident_idx 2-5): 所有值都用0~500")
     print()
-    print("Setting 2 - Azimuthal angle based:")
-    print("  - azimuthal 0:")
-    print("    * incident_idx 0, energy_idx 6&7: 750-1000")
-    print("    * incident_idx 1, energy_idx 6&7: 500-750")
-    print("    * other incident_idx, energy_idx 6&7: 0-500")
-    print("  - azimuthal 1&6: same as azimuthal 0 but × 0.8")
-    print("  - other azimuthal, energy_idx 6&7: 0-400")
-    print("  - other positions: 100-1000")
+    print("Setting 2 - 特定位置基準:")
+    print("  - 水平角度4垂直角度6 (azimuthal 3, incident 5): 能階7和8用750~1000")
+    print("  - 水平角度3垂直角度6 (azimuthal 2, incident 5): 能階7和8用500~750")
+    print("  - 水平角度5垂直角度6 (azimuthal 4, incident 5): 能階7和8用500~750")
+    print("  - 其他所有位置: 全部用0~500")
+    print()
+    print("索引對照:")
+    print("  - 垂直角度 (incident angles): 1-6 對應 index 0-5")
+    print("  - 水平角度 (azimuthal angles): 1-7 對應 index 0-6")
+    print("  - 能階 (energy levels): 7,8 對應 index 6,7 (700eV, 800eV)")
 
 
 def main():
